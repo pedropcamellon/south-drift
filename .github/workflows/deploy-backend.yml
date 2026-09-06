@@ -31,7 +31,7 @@ jobs:
   # ============================================
   build:
     name: "Build"
-    uses: ./.github/workflows/shared/build.yml
+    uses: ./.github/workflows/build.yml
     with:
       context: ./backend
       dockerfile: ./backend/Dockerfile
@@ -44,7 +44,7 @@ jobs:
   approval:
     name: "Approval"
     needs: build
-    uses: ./.github/workflows/shared/approval.yml
+    uses: ./.github/workflows/approval.yml
     with:
       environment: ${{ github.event.inputs.environment }}
       cloud_provider: ${{ github.event.inputs.cloud_provider }}
@@ -57,7 +57,7 @@ jobs:
     name: "Infra (Azure)"
     needs: approval
     if: github.event.inputs.cloud_provider == 'azure' && github.event.inputs.skip_terraform != 'true'
-    uses: ./.github/workflows/azure/terraform.yml
+    uses: ./.github/workflows/azure-terraform.yml
     with:
       environment: ${{ github.event.inputs.environment }}
     secrets:
@@ -70,7 +70,7 @@ jobs:
     name: "Infra (AWS)"
     needs: approval
     if: github.event.inputs.cloud_provider == 'aws' && github.event.inputs.skip_terraform != 'true'
-    uses: ./.github/workflows/aws/terraform.yml
+    uses: ./.github/workflows/aws-terraform.yml
     with:
       environment: ${{ github.event.inputs.environment }}
     secrets:
@@ -89,7 +89,7 @@ jobs:
       github.event.inputs.cloud_provider == 'azure' &&
       needs.approval.result == 'success' &&
       (needs.terraform-azure.result == 'success' || needs.terraform-azure.result == 'skipped')
-    uses: ./.github/workflows/azure/deploy.yml
+    uses: ./.github/workflows/azure-deploy.yml
     with:
       environment: ${{ github.event.inputs.environment }}
       image_name: folium-backend
@@ -108,7 +108,7 @@ jobs:
       github.event.inputs.cloud_provider == 'aws' &&
       needs.approval.result == 'success' &&
       (needs.terraform-aws.result == 'success' || needs.terraform-aws.result == 'skipped')
-    uses: ./.github/workflows/aws/deploy.yml
+    uses: ./.github/workflows/aws-deploy.yml
     with:
       environment: ${{ github.event.inputs.environment }}
       image_name: folium-backend
