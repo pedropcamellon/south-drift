@@ -1,8 +1,12 @@
+"use client";
+
 import React, { useEffect, useState } from "react";
 
-import { API_ENDPOINTS } from "@/lib/api";
+import type { PatientTimelineResponse } from "@/types/patientTimeline";
 
-import { Patient, PatientInteraction } from "@/types";
+import { API_ENDPOINTS, apiJson } from "@/lib/api";
+
+import { Patient } from "@/types";
 
 import PatientHistoryTimeline from "./PatientHistoryTimeline";
 
@@ -15,35 +19,36 @@ export default function PatientPortal({
     patient,
     onClose,
 }: PatientPortalProps) {
-    const [interactions, setInteractions] = useState<PatientInteraction[]>([]);
+    const [timeline, setTimeline] = useState<PatientTimelineResponse>({
+        entries: [],
+    });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        async function fetchInteractions() {
+        async function fetchTimeline() {
             setLoading(true);
             setError(null);
             try {
-                const res = await fetch(
-                    API_ENDPOINTS.interactionsByPatient(patient.id)
+                const data = await apiJson<PatientTimelineResponse>(
+                    API_ENDPOINTS.patientTimeline(patient.id)
                 );
-                if (!res.ok) throw new Error("Failed to fetch interactions");
-                const data = await res.json();
-                setInteractions(data);
-            } catch (err: any) {
-                setError(err.message || "Unknown error");
+                setTimeline(data);
+            } catch (error: unknown) {
+                setError(
+                    error instanceof Error ? error.message : "Unknown error"
+                );
             } finally {
                 setLoading(false);
             }
         }
-        fetchInteractions();
+        void fetchTimeline();
     }, [patient.id]);
 
-    // Quick stats with safer validations
-    const totalInteractions = Array.isArray(interactions)
-        ? interactions.length
-        : 0;
-    const recent = Array.isArray(interactions) ? interactions.slice(0, 3) : [];
+    const encounters = timeline.entries.flatMap((entry) =>
+        entry.kind === "encounter" ? [entry.encounter] : []
+    );
+    const recent = timeline.entries.slice(0, 3);
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-30 z-50 flex items-center justify-center">
@@ -71,10 +76,10 @@ export default function PatientPortal({
                 <div className="mb-4 flex gap-4">
                     <div className="bg-blue-50 rounded p-3 flex-1">
                         <div className="text-xs text-slate-500">
-                            Total Interactions
+                            Total Encounters
                         </div>
                         <div className="text-2xl font-bold text-blue-700">
-                            {totalInteractions}
+                            {encounters.length}
                         </div>
                     </div>
                     <div className="bg-green-50 rounded p-3 flex-1">
@@ -82,11 +87,15 @@ export default function PatientPortal({
                             Recent Activity
                         </div>
                         <ul className="text-sm mt-1">
-                            {recent.map((i) => (
-                                <li key={i.id}>
-                                    {i.title}{" "}
+                            {recent.map((entry) => (
+                                <li key={`${entry.kind}-${entry.id}`}>
+                                    {entry.title}{" "}
                                     <span className="text-xs text-slate-400">
-                                        ({i.type})
+                                        (
+                                        {entry.kind === "encounter"
+                                            ? entry.encounter.encounterType
+                                            : "diagnostic report"}
+                                        )
                                     </span>
                                 </li>
                             ))}
@@ -99,13 +108,13 @@ export default function PatientPortal({
                     </div>
                 </div>
                 <div>
-                    <h3 className="font-semibold mb-2">Interaction Timeline</h3>
+                    <h3 className="font-semibold mb-2">Encounter Timeline</h3>
                     {loading ? (
                         <div>Loading...</div>
                     ) : error ? (
                         <div className="text-red-600">{error}</div>
                     ) : (
-                        <PatientHistoryTimeline interactions={interactions} />
+                        <PatientHistoryTimeline entries={timeline.entries} />
                     )}
                 </div>
             </div>

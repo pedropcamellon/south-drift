@@ -1,14 +1,10 @@
-/**
- * Dialog orchestrator for creating new patient interactions
- * Combines useInteractionForm hook with InteractionForm UI in a Dialog wrapper
- */
-
 "use client";
 
 import { useState } from "react";
 
 import { Plus } from "lucide-react";
 
+import { EncounterForm } from "@/components/dashboard/EncounterForm";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
@@ -20,59 +16,50 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 
-import { useInteractionForm } from "@/hooks/useInteractionForm";
+import { useEncounterForm } from "@/hooks/useEncounterForm";
 
-import { InteractionForm } from "./InteractionForm";
-
-interface NewInteractionDialogProps {
+interface NewEncounterDialogProps {
     patientId: string;
     patientName?: string;
 }
 
-export function NewInteractionDialog({
+export function NewEncounterDialog({
     patientId,
     patientName,
-}: NewInteractionDialogProps) {
+}: NewEncounterDialogProps) {
     const [open, setOpen] = useState(false);
-
-    const form = useInteractionForm({
+    const form = useEncounterForm({
         patientId,
-        onSuccess: () => {
-            setOpen(false);
-        },
+        onSuccess: () => setOpen(false),
     });
-
-    const handleOpenChange = (isOpen: boolean) => {
-        setOpen(isOpen);
-        if (!isOpen) {
-            form.resetForm();
-        }
-    };
-
     return (
-        <Dialog open={open} onOpenChange={handleOpenChange}>
+        <Dialog
+            open={open}
+            onOpenChange={(isOpen) => {
+                setOpen(isOpen);
+                if (!isOpen) form.resetForm();
+            }}
+        >
             <DialogTrigger asChild>
                 <Button>
                     <Plus className="h-4 w-4" />
-                    New Interaction
+                    New Encounter
                 </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Add New Interaction</DialogTitle>
+                    <DialogTitle>Add Encounter</DialogTitle>
                     <DialogDescription>
-                        Create a new interaction record
+                        Create an encounter record
                         {patientName ? ` for ${patientName}` : ""}.
                     </DialogDescription>
                 </DialogHeader>
-
                 <form onSubmit={form.handleSubmit}>
-                    <InteractionForm
+                    <EncounterForm
                         formData={form.formData}
                         onChange={form.updateField}
                         error={form.error}
                     />
-
                     <DialogFooter className="mt-6">
                         <Button
                             type="button"
@@ -85,9 +72,9 @@ export function NewInteractionDialog({
                         <Button
                             type="submit"
                             isLoading={form.loading}
-                            loadingText="Creating..."
+                            loadingText="Creating"
                         >
-                            Create Interaction
+                            Create Encounter
                         </Button>
                     </DialogFooter>
                 </form>

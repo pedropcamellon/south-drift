@@ -2,6 +2,7 @@
 
 import json
 import logging
+import time
 from datetime import timedelta
 from pathlib import Path
 
@@ -57,6 +58,7 @@ async def decide_history(
                 "model": settings.ai_model_name,
                 "messages": messages,
                 "temperature": 0,
+                "max_tokens": settings.history_decision_max_tokens,
                 "response_format": {"type": "json_object"},
             },
         )
@@ -76,19 +78,19 @@ async def retrieve_history(state: ChartReviewGraphState) -> dict[str, list[Chart
         return {"historical_source_chunks": []}
     request = ChartReviewHistoryRequest(
         patient_id=review_input.patient_id,
-        interaction_id=review_input.interaction_id,
+        encounter_id=review_input.encounter_id,
         search_terms=search_terms,
     )
     async with httpx.AsyncClient(timeout=settings.request_timeout_seconds) as client:
         response = await client.post(
-            f"{settings.chartreview_backend_url}/api/v1/interactions/internal/chart-review/history",
+            f"{settings.chartreview_backend_url}/api/v1/encounters/internal/chart-review/history",
             headers={"X-ChartReview-Internal-Token": settings.chartreview_internal_token},
             json=request.model_dump(mode="json"),
         )
         response.raise_for_status()
     history = ChartReviewHistoryResponse.model_validate(response.json())
-    if any(chunk.resource_id == review_input.interaction_id for chunk in history.source_chunks):
-        raise ValueError("Chart-review history retrieval returned the active interaction")
+    if any(chunk.resource_id == review_input.encounter_id for chunk in history.source_chunks):
+        raise ValueError("Chart-review history retrieval returned the active encounter")
     logger.info("Retrieved %d bounded prior chart-review source blocks", len(history.source_chunks))
     return {"historical_source_chunks": history.source_chunks}
 
@@ -120,19 +122,46 @@ async def generate_review(state: ChartReviewGraphState) -> dict[str, ChartReview
             f"Approved prior interaction context:\n{historical_context or 'None supplied.'}"
         ),
     ]
-    async with httpx.AsyncClient(timeout=settings.request_timeout_seconds) as client:
-        response = await client.post(
-            f"{settings.ai_service_base_url}/v1/chat/completions",
-            json={
-                "model": settings.ai_model_name,
-                "messages": messages,
-                "temperature": 0,
-                "response_format": {"type": "json_object"},
-            },
+    started_at = time.monotonic()
+    logger.info(
+        "Starting chart-review generation: encounter_id=%s source_chunks=%d max_tokens=%d",
+        review_input.encounter_id,
+        len(allowed_source_ids),
+        settings.review_max_tokens,
+    )
+    try:
+        async with httpx.AsyncClient(timeout=settings.request_timeout_seconds) as client:
+            response = await client.post(
+                f"{settings.ai_service_base_url}/v1/chat/completions",
+                json={
+                    "model": settings.ai_model_name,
+                    "messages": messages,
+                    "temperature": 0,
+                    "max_tokens": settings.review_max_tokens,
+                    "response_format": {"type": "json_object"},
+                },
+            )
+            response.raise_for_status()
+            completion = parse_chat_completion(response.json())
+            content = completion.content
+        logger.info(
+            "Chart-review generation provider response received: encounter_id=%s response_characters=%d",
+            review_input.encounter_id,
+            len(content),
         )
-        response.raise_for_status()
-        completion = parse_chat_completion(response.json())
-        content = completion.content
+    except httpx.HTTPError:
+        logger.exception(
+            "Chart-review generation provider request failed: encounter_id=%s elapsed_seconds=%.2f",
+            review_input.encounter_id,
+            time.monotonic() - started_at,
+        )
+        raise
+    finally:
+        logger.info(
+            "Chart-review generation request ended: encounter_id=%s elapsed_seconds=%.2f",
+            review_input.encounter_id,
+            time.monotonic() - started_at,
+        )
     logger.info("MediPhi raw chart-review completion: %s", content)
     try:
         raw_output = json.loads(content)

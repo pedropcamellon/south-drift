@@ -1,13 +1,15 @@
 """Summarization endpoints - test integration with summarization service"""
 
-from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel
 import logging
+
+from fastapi import APIRouter, Depends
+from pydantic import BaseModel
 
 from app.core.permissions import Permission
 from app.core.rbac import require_permission
-from app.services.summarization_service import SummarizationService
 from app.dependencies import get_summarization_service
+from app.models.summarization import SummarizationResponse
+from app.services.summarization_service import SummarizationService
 
 logger = logging.getLogger(__name__)
 
@@ -19,31 +21,25 @@ class SummarizeRequest(BaseModel):
 
     transcript: str
     format: str = "soap"
-    interaction_type: str | None = None
+    encounter_type: str | None = None
     language: str = "en"
 
 
-@router.post("")
+@router.post("", response_model=SummarizationResponse)
 async def summarize_transcript(
     request: SummarizeRequest,
-    _: object = Depends(require_permission(Permission.INTERACTIONS_SUMMARIZE)),
+    _: object = Depends(require_permission(Permission.ENCOUNTERS_SUMMARIZE)),
     service: SummarizationService = Depends(get_summarization_service),
-):
+) -> SummarizationResponse:
     """
     Generate a clinical summary from transcript text.
     """
-    try:
-        result = await service.summarize(
-            transcript=request.transcript,
-            format=request.format,
-            interaction_type=request.interaction_type,
-            language=request.language,
-        )
-        return result
-
-    except Exception as e:
-        logger.error(f"[ERROR] Summarization test failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    return await service.summarize(
+        transcript=request.transcript,
+        format=request.format,
+        encounter_type=request.encounter_type,
+        language=request.language,
+    )
 
 
 @router.get("/health")

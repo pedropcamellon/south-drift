@@ -31,6 +31,7 @@ export function DeleteDocumentDialog({
     onConfirm,
 }: DeleteDocumentDialogProps) {
     const [isDeleting, setIsDeleting] = useState(false);
+    const attachment = document?.attachments[0];
 
     const handleConfirm = async () => {
         setIsDeleting(true);
@@ -64,14 +65,15 @@ export function DeleteDocumentDialog({
                                 {document.title}
                             </p>
                             <p className="text-xs text-slate-500 mt-1">
-                                Type: {document.type} •{" "}
+                                Category: {document.category.replace("_", " ")}{" "}
+                                •{" "}
                                 {new Date(
                                     document.createdAt
                                 ).toLocaleDateString()}
                             </p>
-                            {document.fileName && (
+                            {attachment && (
                                 <p className="text-xs text-slate-500">
-                                    File: {document.fileName}
+                                    File: {attachment.fileName}
                                 </p>
                             )}
                         </div>

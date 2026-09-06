@@ -18,13 +18,21 @@ Prometheus and Grafana for monitoring Folium services.
 Start the observability stack with the main docker-compose:
 
 ```bash
-docker compose up prometheus grafana
+docker compose up folium-prometheus folium-grafana folium-loki
 ```
 
 Or start all services:
 
 ```bash
 docker compose up
+```
+
+Promtail is intentionally excluded from normal local startup because it mounts
+the Docker socket. Start it only on Docker hosts that explicitly permit
+`grafana/promtail:3.6.8` to mount that socket:
+
+```bash
+docker compose --profile observability up --detach folium-promtail
 ```
 
 ## Adding Metrics to Services

@@ -2,18 +2,19 @@
 
 import { useParams } from "next/navigation";
 
+import type { PatientTimelineResponse } from "@/types/patientTimeline";
 import useSWR from "swr";
 
 import { PatientClinicalDocumentsPanel } from "@/components/clinicalDocuments/PatientClinicalDocumentsPanel";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import { NewInteractionDialog } from "@/components/dashboard/NewInteractionDialog";
+import { NewEncounterDialog } from "@/components/dashboard/NewEncounterDialog";
 import PatientHistoryTimeline from "@/components/dashboard/PatientHistoryTimeline";
 import { Card } from "@/components/ui/card";
 
 import { API_ENDPOINTS, fetcher } from "@/lib/api";
 
 // Types
-import { Patient, PatientInteraction } from "@/types";
+import { Patient, PatientEncounter } from "@/types";
 
 export default function PatientPage() {
     const params = useParams();
@@ -30,15 +31,15 @@ export default function PatientPage() {
         isLoading: patientLoading,
     } = useSWR<Patient>(id ? API_ENDPOINTS.patient(id) : null, fetcher);
     const {
-        data: interactions,
-        error: interactionsError,
-        isLoading: interactionsLoading,
-    } = useSWR<PatientInteraction[]>(
-        id ? API_ENDPOINTS.interactionsByPatient(id) : null,
+        data: timelinePage,
+        error: timelineError,
+        isLoading: timelineLoading,
+    } = useSWR<PatientTimelineResponse>(
+        id ? API_ENDPOINTS.patientTimeline(id) : null,
         fetcher
     );
 
-    if (patientLoading || interactionsLoading) {
+    if (patientLoading || timelineLoading) {
         return (
             <DashboardLayout>
                 <div className="p-6">Loading...</div>
@@ -52,19 +53,20 @@ export default function PatientPage() {
             </DashboardLayout>
         );
     }
-    if (interactionsError || !interactions) {
+    if (timelineError || !timelinePage) {
         return (
             <DashboardLayout>
                 <div className="p-6 text-red-600">
-                    Failed to load interactions.
+                    Failed to load patient history.
                 </div>
             </DashboardLayout>
         );
     }
-    const totalInteractions = Array.isArray(interactions)
-        ? interactions.length
-        : 0;
-    const recent = Array.isArray(interactions) ? interactions.slice(0, 3) : [];
+    const timeline = timelinePage.entries;
+    const encounters = timeline.flatMap((entry) =>
+        entry.kind === "encounter" ? [entry.encounter] : []
+    );
+    const recent = timeline.slice(0, 3);
 
     return (
         <DashboardLayout>
@@ -93,10 +95,10 @@ export default function PatientPage() {
                     <div className="mb-4 flex gap-4">
                         <div className="bg-blue-50 rounded p-3 flex-1">
                             <div className="text-xs text-slate-500">
-                                Total Interactions
+                                Total Encounters
                             </div>
                             <div className="text-2xl font-bold text-blue-700">
-                                {totalInteractions}
+                                {encounters.length}
                             </div>
                         </div>
                         <div className="bg-green-50 rounded p-3 flex-1">
@@ -104,11 +106,15 @@ export default function PatientPage() {
                                 Recent Activity
                             </div>
                             <ul className="text-sm mt-1">
-                                {recent.map((i) => (
-                                    <li key={i.id}>
-                                        {i.title}{" "}
+                                {recent.map((entry) => (
+                                    <li key={`${entry.kind}-${entry.id}`}>
+                                        {entry.title}{" "}
                                         <span className="text-xs text-slate-400">
-                                            ({i.type})
+                                            (
+                                            {entry.kind === "encounter"
+                                                ? entry.encounter.encounterType
+                                                : "diagnostic report"}
+                                            )
                                         </span>
                                     </li>
                                 ))}
@@ -123,14 +129,14 @@ export default function PatientPage() {
                     <div>
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="font-semibold">
-                                Interaction Timeline
+                                Encounter Timeline
                             </h3>
-                            <NewInteractionDialog
+                            <NewEncounterDialog
                                 patientId={patient.id}
                                 patientName={`${patient.firstName} ${patient.lastName}`}
                             />
                         </div>
-                        <PatientHistoryTimeline interactions={interactions} />
+                        <PatientHistoryTimeline entries={timeline} />
                     </div>
                 </Card>
             </div>

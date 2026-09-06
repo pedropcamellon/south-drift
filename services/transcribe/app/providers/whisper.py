@@ -1,13 +1,15 @@
 """Self-hosted Whisper transcription provider (HIPAA compliant)"""
 
-import httpx
-import time
-import tempfile
-import os
 import logging
-from typing import Optional
-from .base import TranscriptionProvider
+import os
+import tempfile
+import time
+
+import httpx
+
 from app.config import settings
+
+from .base import TranscriptionProvider
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +33,7 @@ class WhisperProvider(TranscriptionProvider):
         try:
             from faster_whisper import WhisperModel
 
-            # Model will be loaded from cache (already downloaded in Docker build)
+            # The persistent HF_HOME volume is populated on first startup.
             self.model = WhisperModel(
                 model_size_or_path=settings.WHISPER_MODEL_SIZE,
                 device=settings.WHISPER_DEVICE,
@@ -51,7 +53,7 @@ class WhisperProvider(TranscriptionProvider):
         audio_url: str,
         language_code: str = "en-US",
         speaker_labels: bool = False,
-        vocabulary_name: Optional[str] = None,
+        vocabulary_name: str | None = None,
     ) -> dict:
         """Transcribe audio using Whisper"""
         start_time = time.time()

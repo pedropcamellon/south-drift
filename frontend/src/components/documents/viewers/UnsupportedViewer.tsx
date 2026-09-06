@@ -17,7 +17,7 @@ export function UnsupportedViewer({ document }: DocumentViewerProps) {
         <div className="text-center py-8">
             <p className="text-muted-foreground mb-4">
                 Preview not available for{" "}
-                {document.mimeType || "this file type"}.
+                {document.attachment.mimeType || "this file type"}.
             </p>
             <Button onClick={handleDownload}>
                 <Download className="w-4 h-4 mr-2" />

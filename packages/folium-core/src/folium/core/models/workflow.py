@@ -21,6 +21,6 @@ class AudioReference:
 class VoiceNotesInput:
     """Voice-note workflow input independent of persistence and transport layers."""
 
-    interaction_id: str
+    encounter_id: str
     patient_id: str
     audio: AudioReference

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import {
     ClinicalDocument,
-    ClinicalDocumentType,
+    ClinicalDocumentCategory,
 } from "@/types/clinicalDocument";
 import { CommonListSortOption } from "@/types/sort";
 
@@ -15,9 +15,9 @@ export function usePatientDocuments(patientId: string) {
     const [documents, setDocuments] = useState<ClinicalDocument[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [selectedTypes, setSelectedTypes] = useState<ClinicalDocumentType[]>(
-        []
-    );
+    const [selectedTypes, setSelectedTypes] = useState<
+        ClinicalDocumentCategory[]
+    >([]);
     const [sortBy, setSortBy] =
         useState<CommonListSortOption>("createdAt-desc");
     const [searchQuery, setSearchQuery] = useState("");
@@ -37,14 +37,6 @@ export function usePatientDocuments(patientId: string) {
                     new Date(a.createdAt).getTime() -
                     new Date(b.createdAt).getTime()
                 );
-            } else if (sortOption === "updatedAt-desc") {
-                const bDate = b.updatedAt
-                    ? new Date(b.updatedAt).getTime()
-                    : new Date(b.createdAt).getTime();
-                const aDate = a.updatedAt
-                    ? new Date(a.updatedAt).getTime()
-                    : new Date(a.createdAt).getTime();
-                return bDate - aDate;
             } else if (sortOption === "title-asc") {
                 return a.title.localeCompare(b.title);
             }
@@ -55,10 +47,7 @@ export function usePatientDocuments(patientId: string) {
     const fetchDocuments = () => {
         setLoading(true);
         setError(null);
-        const typesFilter =
-            selectedTypes.length > 0 ? selectedTypes : undefined;
-
-        listClinicalDocuments(patientId, typesFilter)
+        listClinicalDocuments(patientId)
             .then((docs) => {
                 const sorted = sortDocuments(docs, sortBy);
                 setDocuments(sorted);
@@ -72,7 +61,7 @@ export function usePatientDocuments(patientId: string) {
         fetchDocuments();
     };
 
-    const toggleType = (type: ClinicalDocumentType) => {
+    const toggleType = (type: ClinicalDocumentCategory) => {
         setSelectedTypes((prev) =>
             prev.includes(type)
                 ? prev.filter((t) => t !== type)
@@ -96,18 +85,25 @@ export function usePatientDocuments(patientId: string) {
         return documents.filter((doc) => {
             return (
                 doc.title.toLowerCase().includes(query) ||
-                doc.summary?.toLowerCase().includes(query) ||
-                doc.fileName?.toLowerCase().includes(query)
+                doc.attachments.some((attachment) =>
+                    attachment.fileName.toLowerCase().includes(query)
+                )
             );
         });
     }, [documents, searchQuery]);
+
+    const filteredByType = selectedTypes.length
+        ? filteredDocuments.filter((document) =>
+              selectedTypes.includes(document.category)
+          )
+        : filteredDocuments;
 
     useEffect(() => {
         fetchDocuments();
     }, [patientId, selectedTypes, sortBy]);
 
     return {
-        documents: filteredDocuments,
+        documents: filteredByType,
         loading,
         error,
         selectedTypes,

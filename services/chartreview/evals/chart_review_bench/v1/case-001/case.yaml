@@ -1,0 +1,58 @@
+id: teenager-viral-follow-up-redundant-history-request
+version: 1
+description: >
+  Active context already supplies the fatigue duration and sick-contact context
+  for an adolescent viral-illness follow-up, so history retrieval would repeat
+  known facts.
+
+input:
+  active_review:
+    patient_id: patient-001
+    interaction_id: interaction-001
+    timeline: []
+    documents: []
+    interactions: []
+    transcript:
+      source_id: interaction-transcript:interaction-001
+      source_type: transcript
+      resource_id: interaction-001
+      content_role: transcript
+      content: >
+        Follow-up for a 14-year-old patient: sore throat has improved after
+        five days. Fatigue continues, and several classmates have recently
+        had similar cold symptoms. No viral test result is available in the
+        active record.
+  history_catalog:
+    - source_id: history-interaction-summary:interaction-002
+      source_type: interaction
+      resource_id: interaction-002
+      content_role: summary
+      content: >
+        Prior note records fatigue during a self-limited respiratory illness.
+    - source_id: history-interaction-description:interaction-002
+      source_type: interaction
+      resource_id: interaction-002
+      content_role: description
+      content: Detailed description not supplied to the model.
+
+expected:
+  output:
+    summary_facts:
+      - Sore throat has improved after five days.
+      - Fatigue continues.
+      - Several classmates have recently had similar cold symptoms.
+    missing_information:
+      - Viral test result is not available in the active record.
+    allowed_source_ids:
+      - interaction-transcript:interaction-001
+    forbidden_source_ids:
+      - history-interaction-description:interaction-002
+    confidence: null
+  history_decision:
+    should_retrieve: false
+    forbidden_search_terms:
+      - fatigue duration
+      - sick contacts
+    expected_returned_source_ids: []
+  validation:
+    expected_status: valid

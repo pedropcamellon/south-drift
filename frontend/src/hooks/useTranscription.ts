@@ -1,8 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { apiJson, API_ENDPOINTS } from "@/lib/api";
+import { API_ENDPOINTS, apiJson } from "@/lib/api";
 
-import { PatientInteraction, VoiceNoteWorkflowStatusResponse } from "@/types";
+import {
+    PatientEncounter,
+    VoiceNoteWorkflowStatus,
+    VoiceNoteWorkflowStatusResponse,
+} from "@/types";
 
 export enum TranscriptionState {
     IDLE = "idle",
@@ -20,8 +24,8 @@ export function useTranscription() {
 
     const startPolling = useCallback(
         (
-            interactionId: string,
-            onUpdate: (interaction: PatientInteraction) => void
+            encounterId: string,
+            onUpdate: (encounter: PatientEncounter) => void
         ) => {
             // Abort any existing polling
             if (pollingAbortRef.current) {
@@ -40,32 +44,32 @@ export function useTranscription() {
 
                 try {
                     const data = await apiJson<VoiceNoteWorkflowStatusResponse>(
-                        API_ENDPOINTS.interactionVoiceNoteStatus(interactionId)
+                        API_ENDPOINTS.encounterVoiceNoteStatus(encounterId)
                     );
 
-                    if (data.interaction) {
-                        onUpdate(data.interaction);
+                    if (data.encounter) {
+                        onUpdate(data.encounter);
                     }
 
-                    if (data.status === "failed") {
+                    if (data.status === VoiceNoteWorkflowStatus.FAILED) {
                         setTranscriptionState(TranscriptionState.ERROR);
                         pollingAbortRef.current = null;
                         return;
                     }
 
-                    if (data.status === "partial") {
+                    if (data.status === VoiceNoteWorkflowStatus.PARTIAL) {
                         setTranscriptionState(TranscriptionState.PARTIAL);
                         pollingAbortRef.current = null;
                         return;
                     }
 
-                    if (data.status === "transcribed") {
+                    if (data.status === VoiceNoteWorkflowStatus.TRANSCRIBED) {
                         setTranscriptionState(TranscriptionState.COMPLETE);
                         pollingAbortRef.current = null;
                         return;
                     }
 
-                    if (data.status === "completed") {
+                    if (data.status === VoiceNoteWorkflowStatus.COMPLETED) {
                         setTranscriptionState(TranscriptionState.COMPLETE);
                         pollingAbortRef.current = null;
                         return;

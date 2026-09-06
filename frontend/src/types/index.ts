@@ -1,3 +1,5 @@
+import type { ChartReviewStatus } from "@/constants/chartReview";
+
 // Shared TypeScript definitions
 
 // ============== PORTFOLIO TYPES ==============
@@ -38,62 +40,106 @@ export interface Patient {
     clinicalSummaries: ClinicalSummary[];
 }
 
-export enum InteractionType {
-    Appointment = "Appointment",
-    Vaccination = "Vaccination",
-    Medication = "Medication",
-    LabWork = "LabWork",
-    Procedure = "Procedure",
-    VoiceNote = "VoiceNote",
-    Imaging = "Imaging",
-    Surgery = "Surgery",
-    Consultation = "Consultation",
-    Emergency = "Emergency",
-    Discharge = "Discharge",
-    Admission = "Admission",
+export type EncounterType =
+    | "outpatient"
+    | "telehealth"
+    | "telephone"
+    | "portal"
+    | "emergency"
+    | "inpatient";
+
+export type EncounterPurpose =
+    | "initial"
+    | "follow_up"
+    | "preventive"
+    | "procedure";
+export type EncounterStatus =
+    | "planned"
+    | "in_progress"
+    | "completed"
+    | "cancelled";
+
+export interface EncounterNarrative {
+    id: string;
+    patientId: string;
+    encounterId: string;
+    content: string;
+    status: "preliminary" | "final" | "amended" | "entered_in_error";
+    createdAt: string;
 }
 
-export interface PatientInteraction {
+export interface PatientEncounter {
     id: string;
     createdAt: string;
     createdBy: string;
-    description: string;
-    interactionDate: string;
+    description?: string | null;
+    startedAt: string;
+    endedAt?: string | null;
     isCompliant: boolean;
-    location: string;
-    metadata: Record<string, any>;
-    note?: string; // User-editable note field
-    summary?: string;
+    location?: string | null;
+    note?: string | null;
+    summary?: string | null;
     structuredSummary?: StructuredSummary;
     chiefComplaint?: string;
     clinicalAssessment?: string;
     treatmentPlan?: string;
     patientId: string;
-    providerId: string;
-    providerName: string;
+    clinicianId?: string | null;
+    clinicianName?: string | null;
     title: string;
-    type: InteractionType;
-    updatedAt: string;
-    updatedBy: string;
+    encounterType: EncounterType;
+    purpose: EncounterPurpose;
+    status: EncounterStatus;
+    audioMetadata?: EncounterAudioMetadata | null;
+    narratives: EncounterNarrative[];
+    updatedAt?: string | null;
+    updatedBy?: string | null;
+}
+
+export enum VoiceNoteWorkflowStatus {
+    IDLE = "idle",
+    PROCESSING = "processing",
+    TRANSCRIBED = "transcribed",
+    COMPLETED = "completed",
+    PARTIAL = "partial",
+    FAILED = "failed",
+}
+
+export interface VoiceNoteWorkflowMetadata {
+    workflowId?: string | null;
+    runId?: string | null;
+    status?: VoiceNoteWorkflowStatus | null;
+    failureStage?: string | null;
+    errorMessage?: string | null;
+    updatedAt?: string | null;
+    transcriptAppliedAt?: string | null;
+}
+
+export interface EncounterAudioMetadata {
+    filename?: string | null;
+    storageKey?: string | null;
+    storageUrl?: string | null;
+    size?: number | null;
+    contentType?: string | null;
+    transcriptionStatus?: VoiceNoteWorkflowStatus | null;
+    voiceNoteWorkflow?: VoiceNoteWorkflowMetadata | null;
 }
 
 export interface VoiceNoteWorkflowStatusResponse {
-    interactionId: string;
+    encounterId: string;
     workflowId?: string;
     runId?: string;
-    status: "idle" | "processing" | "transcribed" | "completed" | "partial" | "failed";
+    status: VoiceNoteWorkflowStatus;
     failureStage?: string | null;
     errorMessage?: string | null;
-    interaction?: PatientInteraction;
+    encounter?: PatientEncounter;
 }
-
-import type { ChartReviewStatus } from "@/constants/chartReview";
 
 export type { ChartReviewStatus };
 export type ChartReviewConfidence = "low" | "medium" | "high";
 
 export interface ChartReviewSourceRef {
-    sourceType: "timeline" | "document" | "interaction" | "transcript";
+    sourceType: "timeline" | "document" | "encounter" | "transcript";
     resourceId?: string | null;
     displayLabel?: string | null;
     contentRole?: string | null;
@@ -102,7 +148,7 @@ export interface ChartReviewSourceRef {
 
 export interface ChartReview {
     id: string;
-    interactionId: string;
+    encounterId: string;
     status: ChartReviewStatus;
     summary?: string | null;
     reasoning?: string | null;
@@ -129,7 +175,7 @@ export interface StructuredSummary {
 export interface SummarizationRequest {
     transcript: string;
     format?: "soap" | "narrative";
-    interaction_type?: string;
+    encounter_type?: string;
     language?: string;
 }
 

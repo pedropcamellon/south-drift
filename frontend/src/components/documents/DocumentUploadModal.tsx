@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 // Types
-import { ClinicalDocumentType } from "@/types/clinicalDocument";
+import { ClinicalDocumentCategory } from "@/types/clinicalDocument";
 import {
     AlertCircle,
     CheckCircle2,
@@ -32,7 +32,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 
 import { uploadDocument } from "@/services/clinicalDocumentService";
 
@@ -40,20 +39,14 @@ interface DocumentUploadModalProps {
     open: boolean;
     onClose: () => void;
     patientId: string;
-    interactionId?: string;
     onUploadSuccess?: () => void;
 }
 
-const DOCUMENT_TYPES: { value: ClinicalDocumentType; label: string }[] = [
-    { value: "LabResult", label: "Lab Result" },
-    { value: "ImagingReport", label: "Imaging Report" },
-    { value: "Prescription", label: "Prescription" },
-    { value: "AdministrativeForm", label: "Administrative Form" },
-    { value: "ClinicalNote", label: "Clinical Note" },
-    { value: "VisitSummary", label: "Visit Summary" },
-    { value: "CommunicationMessage", label: "Communication / Referral" },
-    { value: "PatientUpload", label: "Patient Upload" },
-    { value: "BillingCoding", label: "Billing / Coding" },
+const DOCUMENT_TYPES: { value: ClinicalDocumentCategory; label: string }[] = [
+    { value: "clinical_note", label: "Clinical Note" },
+    { value: "external_record", label: "External Record" },
+    { value: "visit_summary", label: "Visit Summary" },
+    { value: "patient_submission", label: "Patient Submission" },
 ];
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -71,14 +64,12 @@ export function DocumentUploadModal({
     open,
     onClose,
     patientId,
-    interactionId,
     onUploadSuccess,
 }: DocumentUploadModalProps) {
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [documentType, setDocumentType] =
-        useState<ClinicalDocumentType>("LabResult");
+        useState<ClinicalDocumentCategory>("external_record");
     const [title, setTitle] = useState("");
-    const [summary, setSummary] = useState("");
     const [uploadProgress, setUploadProgress] = useState(0);
     const [isUploading, setIsUploading] = useState(false);
     const [uploadError, setUploadError] = useState<string | null>(null);
@@ -137,10 +128,8 @@ export function DocumentUploadModal({
             await uploadDocument({
                 file: selectedFile,
                 patientId,
-                type: documentType,
+                category: documentType,
                 title,
-                summary: summary || undefined,
-                interactionId,
                 onProgress: setUploadProgress,
             });
 
@@ -166,7 +155,6 @@ export function DocumentUploadModal({
         if (isUploading) return; // Prevent closing during upload
         setSelectedFile(null);
         setTitle("");
-        setSummary("");
         setUploadProgress(0);
         setUploadError(null);
         setUploadSuccess(false);
@@ -291,7 +279,7 @@ export function DocumentUploadModal({
                                     value={documentType}
                                     onValueChange={(value) =>
                                         setDocumentType(
-                                            value as ClinicalDocumentType
+                                            value as ClinicalDocumentCategory
                                         )
                                     }
                                 >
@@ -319,21 +307,6 @@ export function DocumentUploadModal({
                                     value={title}
                                     onChange={(e) => setTitle(e.target.value)}
                                     placeholder="Document title"
-                                    disabled={isUploading}
-                                />
-                            </div>
-
-                            {/* Summary (Optional) */}
-                            <div className="space-y-2">
-                                <Label htmlFor="summary">
-                                    Summary (Optional)
-                                </Label>
-                                <Textarea
-                                    id="summary"
-                                    value={summary}
-                                    onChange={(e) => setSummary(e.target.value)}
-                                    placeholder="Brief description or key findings..."
-                                    rows={3}
                                     disabled={isUploading}
                                 />
                             </div>

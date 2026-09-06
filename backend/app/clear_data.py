@@ -1,21 +1,19 @@
-"""Clear interactions and documents from database."""
+"""Clear the synthetic patient-owned clinical graph from development data."""
 
 import asyncio
+
 from sqlalchemy import delete
 
 from app.core.database import async_session_maker
-from app.models.db import Interaction, Document
+from app.models.db import Patient
 
 
 async def main():
-    """Clear interactions and documents."""
+    """Clear patients and database-cascaded clinical records, retaining users."""
     async with async_session_maker() as session:
-        # Delete documents first (foreign key constraint)
-        await session.execute(delete(Document))
-        # Then delete interactions
-        await session.execute(delete(Interaction))
+        await session.execute(delete(Patient))
         await session.commit()
-        print("Cleared all interactions and documents")
+        print("Cleared synthetic patients and patient-owned clinical records")
 
 
 if __name__ == "__main__":

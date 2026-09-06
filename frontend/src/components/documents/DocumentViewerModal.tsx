@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 // Types
-import { ClinicalDocument } from "@/types/clinicalDocument";
+import { ClinicalDocumentAttachmentView } from "@/types/clinicalDocument";
 import { Download, ZoomIn, ZoomOut } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,7 @@ import {
 import { documentViewerFactory } from "./viewers/factory";
 
 interface DocumentViewerModalProps {
-    document: ClinicalDocument;
+    document: ClinicalDocumentAttachmentView;
     open: boolean;
     onClose: () => void;
 }
@@ -52,9 +52,7 @@ export function DocumentViewerModal({
     };
 
     const handleDownload = () => {
-        if (document.fileUrl) {
-            window.open(document.fileUrl, "_blank");
-        }
+        window.open(document.fileUrl, "_blank");
     };
 
     const handleZoomIn = () => setScale((prev) => Math.min(prev + 0.2, 3.0));
@@ -70,24 +68,22 @@ export function DocumentViewerModal({
                             <DialogTitle>{document.title}</DialogTitle>
                             <div className="flex gap-2 mt-2 text-sm text-muted-foreground">
                                 <span className="bg-slate-100 rounded px-2 py-0.5">
-                                    {document.type}
+                                    {document.category.replace("_", " ")}
                                 </span>
                                 <span>
                                     {new Date(
                                         document.createdAt
                                     ).toLocaleDateString()}
                                 </span>
-                                {document.fileSize && (
-                                    <span>
-                                        {(document.fileSize / 1024).toFixed(1)}{" "}
-                                        KB
-                                    </span>
-                                )}
-                                {document.mimeType && (
-                                    <span className="text-xs text-slate-400">
-                                        {document.mimeType}
-                                    </span>
-                                )}
+                                <span>
+                                    {(
+                                        document.attachment.byteSize / 1024
+                                    ).toFixed(1)}{" "}
+                                    KB
+                                </span>
+                                <span className="text-xs text-slate-400">
+                                    {document.attachment.mimeType}
+                                </span>
                             </div>
                         </div>
                     </div>

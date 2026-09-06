@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 from dataclasses import asdict, is_dataclass
 from datetime import timedelta
+from typing import Protocol, cast
 from uuid import uuid4
 
 from folium.core.voicenotes import (
@@ -16,6 +17,15 @@ from folium.core.voicenotes import (
 from temporalio.client import Client, WorkflowExecutionStatus, WorkflowFailureError
 
 from app.config import settings
+
+
+class VoiceNoteSettings(Protocol):
+    TEMPORAL_ADDRESS: str
+    TEMPORAL_NAMESPACE: str
+    VOICENOTES_WORKFLOW_EXECUTION_TIMEOUT_MINUTES: int
+
+
+voice_note_settings = cast(VoiceNoteSettings, settings)
 
 
 class VoiceNotesService:
@@ -32,18 +42,18 @@ class VoiceNotesService:
         async with self._client_lock:
             if self._client is None:
                 self._client = await Client.connect(
-                    settings.TEMPORAL_ADDRESS,
-                    namespace=settings.TEMPORAL_NAMESPACE,
+                    voice_note_settings.TEMPORAL_ADDRESS,
+                    namespace=voice_note_settings.TEMPORAL_NAMESPACE,
                 )
 
         return self._client
 
-    def build_workflow_id(self, interaction_id: str) -> str:
-        return f"voice-note-{interaction_id}-{uuid4().hex[:8]}"
+    def build_workflow_id(self, encounter_id: str) -> str:
+        return f"voice-note-{encounter_id}-{uuid4().hex[:8]}"
 
     async def start_voicenotes(
         self,
-        interaction_id: str,
+        encounter_id: str,
         patient_id: str,
         storage_key: str,
         audio_url: str,
@@ -52,7 +62,7 @@ class VoiceNotesService:
     ) -> dict[str, str]:
         client = await self._get_client()
         workflow_input = VoiceNotesInput(
-            interaction_id=interaction_id,
+            encounter_id=encounter_id,
             patient_id=patient_id,
             audio=AudioReference(
                 storage_key=storage_key,
@@ -61,14 +71,14 @@ class VoiceNotesService:
                 content_type=content_type,
             ),
         )
-        workflow_id = self.build_workflow_id(interaction_id)
+        workflow_id = self.build_workflow_id(encounter_id)
         handle = await client.start_workflow(
             VOICENOTES_WORKFLOW_NAME,
             workflow_input,
             id=workflow_id,
             task_queue=VOICENOTES_TASK_QUEUE,
             execution_timeout=timedelta(
-                minutes=settings.VOICENOTES_WORKFLOW_EXECUTION_TIMEOUT_MINUTES
+                minutes=voice_note_settings.VOICENOTES_WORKFLOW_EXECUTION_TIMEOUT_MINUTES
             ),
         )
 
@@ -85,6 +95,9 @@ class VoiceNotesService:
         client = await self._get_client()
         handle = client.get_workflow_handle(workflow_id, run_id=run_id)
         description = await handle.describe()
+        if description.status is None:
+            raise RuntimeError("Temporal workflow description did not include a status")
+
         result: dict | None = None
         error_message: str | None = None
 

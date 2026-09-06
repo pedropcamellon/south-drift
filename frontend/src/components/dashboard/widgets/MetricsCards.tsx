@@ -77,7 +77,7 @@ export default function MetricsCards() {
                                         height="100%"
                                     >
                                         <LineChart
-                                            data={data?.patientHistory || []}
+                                            data={data?.recentPatients || []}
                                             margin={{
                                                 top: 10,
                                                 right: 30,
@@ -87,7 +87,7 @@ export default function MetricsCards() {
                                         >
                                             <CartesianGrid strokeDasharray="3 3" />
                                             <XAxis
-                                                dataKey="week"
+                                                dataKey="month"
                                                 tick={{ fontSize: 12 }}
                                             />
                                             <YAxis allowDecimals={false} />
@@ -121,7 +121,7 @@ export default function MetricsCards() {
                     </span>
                 </Card>
             </motion.div>
-            {/* Medical Calls Processed Card (right half) */}
+            {/* Recent Patients Card (right half) */}
             <motion.div
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -130,13 +130,16 @@ export default function MetricsCards() {
             >
                 <Card className="p-6 flex flex-col items-start w-full h-full justify-between">
                     <span className="text-base font-bold text-slate-700 mb-1">
-                        Medical Calls Processed
+                        Recent Patients
                     </span>
                     <span className="text-3xl font-bold text-blue-700">
                         {isLoading ? (
                             <span className="animate-pulse">...</span>
                         ) : (
-                            (data?.callsProcessed ?? 0)
+                            (data?.recentPatients ?? []).reduce(
+                                (total, patient) => total + patient.count,
+                                0
+                            )
                         )}
                     </span>
                 </Card>

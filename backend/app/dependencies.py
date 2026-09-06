@@ -5,13 +5,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_async_session
 from app.repositories.chart_review_repository import ChartReviewRepository
-from app.repositories.document_repository import DocumentRepository
-from app.repositories.interaction_repository import InteractionRepository
+from app.repositories.clinical_document_repository import ClinicalDocumentRepository
+from app.repositories.diagnostic_report_repository import DiagnosticReportRepository
+from app.repositories.encounter_repository import EncounterRepository
+from app.repositories.imaging_study_repository import ImagingStudyRepository
 from app.repositories.patient_repository import PatientRepository
 from app.services.chart_review_request_service import ChartReviewRequestService
 from app.services.chart_review_workflow_service import ChartReviewWorkflowService
-from app.services.document_service import DocumentService
-from app.services.interaction_service import InteractionService
+from app.services.clinical_document_service import ClinicalDocumentService
+from app.services.diagnostic_report_service import DiagnosticReportService
+from app.services.encounter_service import EncounterService
+from app.services.imaging_study_service import ImagingStudyService
+from app.services.patient_history_service import PatientHistoryService
 from app.services.patient_service import PatientService
 from app.services.storage.base import ObjectStorageProvider
 from app.services.storage.factory import get_storage
@@ -39,32 +44,62 @@ def get_patient_service(
     return PatientService(repository)
 
 
-def get_interaction_repository(
+def get_encounter_repository(
     session: AsyncSession = Depends(get_async_session),
-) -> InteractionRepository:
-    """Get interaction repository with database session"""
-    return InteractionRepository(session)
+) -> EncounterRepository:
+    return EncounterRepository(session)
 
 
-def get_interaction_service(
-    repository: InteractionRepository = Depends(get_interaction_repository),
-) -> InteractionService:
-    """Get interaction service with injected repository"""
-    return InteractionService(repository)
+def get_encounter_service(
+    repository: EncounterRepository = Depends(get_encounter_repository),
+) -> EncounterService:
+    return EncounterService(repository)
 
 
-def get_document_repository(
+def get_clinical_document_repository(
     session: AsyncSession = Depends(get_async_session),
-) -> DocumentRepository:
-    """Get document repository with database session"""
-    return DocumentRepository(session)
+) -> ClinicalDocumentRepository:
+    return ClinicalDocumentRepository(session)
 
 
-def get_document_service(
-    repository: DocumentRepository = Depends(get_document_repository),
-) -> DocumentService:
-    """Get document service with injected repository"""
-    return DocumentService(repository)
+def get_clinical_document_service(
+    repository: ClinicalDocumentRepository = Depends(get_clinical_document_repository),
+) -> ClinicalDocumentService:
+    return ClinicalDocumentService(repository)
+
+
+def get_diagnostic_report_repository(
+    session: AsyncSession = Depends(get_async_session),
+) -> DiagnosticReportRepository:
+    return DiagnosticReportRepository(session)
+
+
+def get_diagnostic_report_service(
+    repository: DiagnosticReportRepository = Depends(get_diagnostic_report_repository),
+) -> DiagnosticReportService:
+    return DiagnosticReportService(repository)
+
+
+def get_imaging_study_repository(
+    session: AsyncSession = Depends(get_async_session),
+) -> ImagingStudyRepository:
+    return ImagingStudyRepository(session)
+
+
+def get_imaging_study_service(
+    repository: ImagingStudyRepository = Depends(get_imaging_study_repository),
+) -> ImagingStudyService:
+    return ImagingStudyService(repository)
+
+
+def get_patient_history_service(
+    encounter_service: EncounterService = Depends(get_encounter_service),
+    diagnostic_report_service: DiagnosticReportService = Depends(get_diagnostic_report_service),
+    imaging_study_service: ImagingStudyService = Depends(get_imaging_study_service),
+) -> PatientHistoryService:
+    return PatientHistoryService(
+        encounter_service, diagnostic_report_service, imaging_study_service
+    )
 
 
 def get_chart_review_repository(
@@ -76,13 +111,13 @@ def get_chart_review_repository(
 
 def get_chart_review_request_service(
     repository: ChartReviewRepository = Depends(get_chart_review_repository),
-    interaction_service: InteractionService = Depends(get_interaction_service),
+    encounter_service: EncounterService = Depends(get_encounter_service),
     workflow_service: ChartReviewWorkflowService = Depends(
         lambda: get_chart_review_workflow_service()
     ),
 ) -> ChartReviewRequestService:
     """Get the explicit clinician-requested chart-review service."""
-    return ChartReviewRequestService(repository, interaction_service, workflow_service)
+    return ChartReviewRequestService(repository, encounter_service, workflow_service)
 
 
 def get_chart_review_workflow_service() -> ChartReviewWorkflowService:
@@ -122,9 +157,9 @@ async def get_storage_provider() -> ObjectStorageProvider:
 
 
 async def get_voice_note_service(
-    interaction_service: InteractionService = Depends(get_interaction_service),
+    encounter_service: EncounterService = Depends(get_encounter_service),
     workflow_service: VoiceNotesService = Depends(get_voicenotes_service),
     storage_provider: ObjectStorageProvider = Depends(get_storage_provider),
 ) -> VoiceNoteService:
     """Get voice note orchestration service with injected collaborators."""
-    return VoiceNoteService(interaction_service, workflow_service, storage_provider)
+    return VoiceNoteService(encounter_service, workflow_service, storage_provider)

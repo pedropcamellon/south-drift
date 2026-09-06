@@ -72,6 +72,6 @@ def open_patient_history(page: Page, flow: FlowCase, patient: PatientPayload) ->
         timeout=15000
     )
     page.wait_for_url("**/patients/*", timeout=20000)
-    page.get_by_role("button", name="New Interaction").wait_for(
+    page.get_by_role("button", name="New Encounter").wait_for(
         state="visible", timeout=15000
     )

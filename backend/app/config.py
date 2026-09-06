@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from pydantic import model_validator
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings
 
 ROOT_ENV_FILE = Path(__file__).resolve().parents[2] / ".env"
@@ -13,9 +13,9 @@ class Settings(BaseSettings):
     """Application settings loaded from environment variables"""
 
     # App settings
-    APP_NAME: str = "Folium"
+    app_name: str = Field("Folium", validation_alias="APP_NAME")
     DEBUG: bool = False
-    VERSION: str = "1.0.0"
+    version: str = Field("1.0.0", validation_alias="VERSION")
 
     # CORS
     ALLOWED_ORIGINS: list[str] = [
@@ -110,4 +110,4 @@ class Settings(BaseSettings):
         extra = "ignore"  # Ignore extra environment variables (e.g., from .NET Core)
 
 
-settings = Settings()
+settings: Settings = Settings()

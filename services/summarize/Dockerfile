@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.7
 # Clinical summarization service using the root uv workspace.
 ARG PROVIDER=local
 
@@ -16,8 +17,22 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
+FROM base AS dependencies
+
+ARG PROVIDER
+
+COPY pyproject.toml uv.lock ./
+COPY packages/folium-core/pyproject.toml packages/folium-core/pyproject.toml
+COPY services/summarize/pyproject.toml services/summarize/pyproject.toml
+
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev --no-install-workspace --package summarize --extra "${PROVIDER}"
+
+FROM dependencies
+
 COPY . .
-RUN uv sync --frozen --no-dev --package summarize --extra "${PROVIDER}"
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev --package summarize --extra "${PROVIDER}"
 
 # Local models are mounted at runtime from ./services/summarize/models.
 RUN mkdir -p /models

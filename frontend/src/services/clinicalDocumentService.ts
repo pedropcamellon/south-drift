@@ -1,17 +1,15 @@
 import {
     ClinicalDocument,
-    ClinicalDocumentType,
-    ClinicalNoteDocument,
+    ClinicalDocumentCategory,
 } from "@/types/clinicalDocument";
 
 import { API_ENDPOINTS, apiJson, apiRequest } from "@/lib/api";
 import { getAuthToken } from "@/lib/auth-api";
 
 export async function listClinicalDocuments(
-    patientId: string,
-    types?: string[]
+    patientId: string
 ): Promise<ClinicalDocument[]> {
-    const url = API_ENDPOINTS.documentsByPatient(patientId, types);
+    const url = API_ENDPOINTS.documentsByPatient(patientId);
     return apiJson<ClinicalDocument[]>(url);
 }
 
@@ -21,17 +19,6 @@ export async function getClinicalDocument(
     return apiJson<ClinicalDocument>(API_ENDPOINTS.document(id));
 }
 
-export async function updateClinicalNote(
-    id: string,
-    doc: Partial<ClinicalNoteDocument>
-): Promise<ClinicalNoteDocument> {
-    return apiJson<ClinicalNoteDocument>(API_ENDPOINTS.document(id), {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(doc),
-    });
-}
-
 export async function deleteClinicalDocument(id: string): Promise<void> {
     const res = await apiRequest(API_ENDPOINTS.document(id), {
         method: "DELETE",
@@ -39,48 +26,24 @@ export async function deleteClinicalDocument(id: string): Promise<void> {
     if (!res.ok) throw new Error("Failed to delete document");
 }
 
-export async function createClinicalNote(
-    patientId: string,
-    doc: Omit<
-        ClinicalNoteDocument,
-        | "id"
-        | "createdAt"
-        | "updatedAt"
-        | "createdBy"
-        | "updatedBy"
-        | "typeLabel"
-    >
-): Promise<ClinicalNoteDocument> {
-    return apiJson<ClinicalNoteDocument>(API_ENDPOINTS.documents, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...doc, patientId }),
-    });
-}
-
 export interface UploadDocumentParams {
     file: File;
     patientId: string;
-    type: ClinicalDocumentType;
+    category: ClinicalDocumentCategory;
     title: string;
-    summary?: string;
-    interactionId?: string;
     onProgress?: (progress: number) => void;
 }
 
 export async function uploadDocument(
     params: UploadDocumentParams
 ): Promise<ClinicalDocument> {
-    const { file, patientId, type, title, summary, interactionId, onProgress } =
-        params;
+    const { file, patientId, category, title, onProgress } = params;
 
     const formData = new FormData();
     formData.append("file", file);
     formData.append("patientId", patientId);
-    formData.append("type", type);
+    formData.append("category", category);
     formData.append("title", title);
-    if (summary) formData.append("summary", summary);
-    if (interactionId) formData.append("interactionId", interactionId);
 
     return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();

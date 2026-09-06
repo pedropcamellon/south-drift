@@ -1,62 +1,86 @@
-"""Seed document data for patients."""
+"""Seed native clinical documents with stored synthetic attachments."""
 
-from typing import List
+from datetime import UTC, datetime
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.db import Patient, Interaction, Document
+from app.models.db import Attachment, ClinicalDocument, Patient
+from app.services.storage.base import ObjectStorageProvider
 
 
-async def seed_documents(
-    session: AsyncSession, patients: List[Patient], interactions: List[Interaction]
-) -> None:
-    """Seed documents including one attached to María's encounter."""
-    if not patients:
-        return
+async def seed_clinical_documents(
+    session: AsyncSession,
+    storage: ObjectStorageProvider,
+    patients: list[Patient],
+) -> list[ClinicalDocument]:
+    """Seed native documents and attachments for the synthetic patient cohort."""
+    if len(patients) != 3:
+        raise ValueError("Clinical document seeds require exactly three patients")
 
-    # Check if documents already exist
-    result = await session.execute(select(Document).limit(1))
+    result = await session.execute(select(ClinicalDocument).limit(1))
     if result.scalar_one_or_none():
-        print("Documents already seeded")
-        return
+        return []
 
-    # Create documents including one attached to María's encounter
-    documents = [
-        Document(
-            patient_id=patients[0].id,
-            interaction_id=interactions[0].id if interactions else None,
-            title="Chest X-Ray Results",
-            file_name="chest-xray-2026-03-01.pdf",
-            mime_type="application/pdf",
-            file_size=245678,
-            file_url="https://storage.example.com/docs/chest-xray-maria.pdf",
-            type="ImagingReport",
-            created_by="provider@folium.com",
+    document_seeds = [
+        (
+            patients[0],
+            "external_record",
+            "Chest X-Ray Results",
+            datetime(2026, 3, 1, 12, 0, tzinfo=UTC),
+            "chest-xray-summary.txt",
+            b"Synthetic chest X-ray report: no acute cardiopulmonary finding.\n",
         ),
-        Document(
-            patient_id=patients[0].id,
-            title="Patient Intake Form",
-            file_name="intake-form-maria-garcia.pdf",
-            mime_type="application/pdf",
-            file_size=89234,
-            file_url="https://storage.example.com/docs/intake-maria.pdf",
-            type="AdministrativeForm",
-            created_by="staff@folium.com",
+        (
+            patients[0],
+            "patient_submission",
+            "Patient Intake Form",
+            datetime(2026, 2, 28, 9, 0, tzinfo=UTC),
+            "patient-intake.txt",
+            b"Synthetic intake record for local development only.\n",
         ),
-        Document(
-            patient_id=patients[1].id,
-            title="Lab Results - Blood Panel",
-            file_name="lab-results-2026-02-28.pdf",
-            mime_type="application/pdf",
-            file_size=156432,
-            file_url="https://storage.example.com/docs/lab-results-james.pdf",
-            type="LabResult",
-            created_by="provider@folium.com",
+        (
+            patients[1],
+            "external_record",
+            "Laboratory Results Attachment",
+            datetime(2026, 2, 28, 14, 30, tzinfo=UTC),
+            "preventive-blood-panel.txt",
+            b"Synthetic laboratory attachment. Structured values are in DiagnosticReport.\n",
         ),
     ]
 
-    session.add_all(documents)
+    documents: list[ClinicalDocument] = []
+    for patient, category, title, authored_at, file_name, data in document_seeds:
+        storage_key = f"documents/synthetic/{patient.id}/{file_name}"
+        await storage.upload(
+            key=storage_key,
+            data=data,
+            content_type="text/plain",
+            metadata={"seed": "synthetic"},
+        )
+        document = ClinicalDocument(
+            patient_id=patient.id,
+            category=category,
+            status="final",
+            title=title,
+            authored_at=authored_at,
+        )
+        session.add(document)
+        await session.flush()
+        session.add(
+            Attachment(
+                clinical_document_id=document.id,
+                storage_key=storage_key,
+                file_name=file_name,
+                mime_type="text/plain",
+                byte_size=len(data),
+            )
+        )
+        documents.append(document)
+
     await session.commit()
 
-    print(f"Seeded {len(documents)} documents")
+    for document in documents:
+        await session.refresh(document)
+
+    return documents

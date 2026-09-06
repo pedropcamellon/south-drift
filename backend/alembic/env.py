@@ -7,10 +7,27 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
+from app.models.db import (  # noqa: F401
+    Attachment,
+    ChartReview,
+    ChartReviewCitation,
+    ChartReviewSourceRef,
+    ClinicalDocument,
+    ClinicalProvenance,
+    DiagnosticReport,
+    Encounter,
+    EncounterNarrative,
+    ImagingStudy,
+    Immunization,
+    Medication,
+    Observation,
+    Patient,
+    Procedure,
+    ResourceRelationship,
+)
 
 # Import Base and all models for autogenerate support
 from app.models.user import Base
-from app.models.db import Patient, Interaction, Document  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

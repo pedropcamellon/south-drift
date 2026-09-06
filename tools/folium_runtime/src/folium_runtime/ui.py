@@ -11,11 +11,12 @@ console = Console()
 
 # Leaf mark followed by a lowercase "folium" glyph, both drawn as plain ASCII blocks.
 _LEAF = (
-    "  ▄▄ ▄ ",
-    " ██ ██ ",
-    " █ ███ ",
-    " ██ ▄  ",
-    " ██    ",
+    "   ▄▄ ▄  ",
+    "  ██ ███ ",
+    " ██ ██ █ ",
+    " █ █ ██  ",
+    " ███     ",
+    # " ██      ",
 )
 _F = ("  ▄▄▄ ", "  █   ", " ████ ", "  █   ", "  █   ")
 _O = (" ▄▄▄  ", "█   █ ", "█   █ ", "█   █ ", " ███  ")
@@ -26,7 +27,7 @@ _M = ("▄    ▄ ", "██  ██ ", "█ ██ █ ", "█    █ ", "█  
 
 FOLIUM_WORDMARK = tuple(
     " ".join(glyph[row] for glyph in (_LEAF, _F, _O, _L, _I, _U, _M))
-    for row in range(5)
+    for row in range(len(_LEAF))
 )
 WORDMARK_STYLES = ("bright_white", "white", "grey70", "grey58", "grey46")
 

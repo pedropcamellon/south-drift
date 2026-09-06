@@ -29,7 +29,8 @@ Folium is a modern Electronic Health Records (EHR) system designed for healthcar
 ### User Guides
 
 - [Managing Patients](user-guide/patients.md) - Create, edit, and search patient records
-- [Recording Interactions](user-guide/interactions.md) - Document patient visits and encounters
+- [Encounters](user-guide/encounters.md) - Record patient contacts and work with
+  their notes, summaries, and draft-support actions
 - [Clinical Documents](user-guide/documents.md) - Upload and manage patient documents
 - [Voice Notes](user-guide/voice-notes.md) - Record and transcribe clinical notes
 - [AI Summaries](user-guide/summaries.md) - Generate and edit clinical summaries
@@ -40,6 +41,10 @@ Folium is a modern Electronic Health Records (EHR) system designed for healthcar
 - [Chart Review Agent Lessons](dev/chart-review-agent.md) - Local operations and bounded retrieval constraints
 - [Local LLM Build Compatibility](dev/local-llm-builds.md) - A Linux ARM build
   lesson and the portable local-summarizer default
+- [Clinical Data Model](dev/clinical-data-model.md) - Typed clinical-record
+  relationships, migration conventions, and deferred scope
+- [Clinical Data Migration](dev/clinical-data-migration.md) - Retired-record
+  mapping and synthetic development-data reset procedure
 
 ### Administrator Guides
 

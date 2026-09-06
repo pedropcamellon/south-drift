@@ -22,37 +22,46 @@ export const API_ENDPOINTS = {
     // Patients
     patients: `${FASTAPI_BASE_URL}/api/v1/patients/`,
     patient: (id: string) => `${FASTAPI_BASE_URL}/api/v1/patients/${id}`,
+    patientTimeline: (id: string) =>
+        `${FASTAPI_BASE_URL}/api/v1/patients/${id}/timeline`,
 
-    // Interactions
-    interactions: `${FASTAPI_BASE_URL}/api/v1/interactions`,
-    interaction: (id: string) =>
-        `${FASTAPI_BASE_URL}/api/v1/interactions/${id}`,
-    interactionsByPatient: (patientId: string) =>
-        `${FASTAPI_BASE_URL}/api/v1/interactions/?patientId=${patientId}`,
-    interactionNote: (id: string) =>
-        `${FASTAPI_BASE_URL}/api/v1/interactions/${id}/note`,
-    interactionSummary: (id: string) =>
-        `${FASTAPI_BASE_URL}/api/v1/interactions/${id}/summary`,
-    interactionVoiceNoteStatus: (id: string) =>
-        `${FASTAPI_BASE_URL}/api/v1/interactions/${id}/voice-note-status`,
-    interactionChartReview: (id: string) =>
-        `${FASTAPI_BASE_URL}/api/v1/interactions/${id}/chart-review`,
+    // Encounters
+    encounters: `${FASTAPI_BASE_URL}/api/v1/encounters`,
+    encounter: (id: string) => `${FASTAPI_BASE_URL}/api/v1/encounters/${id}`,
+    encountersByPatient: (patientId: string) =>
+        `${FASTAPI_BASE_URL}/api/v1/encounters/?patientId=${patientId}`,
+    encounterNote: (id: string) =>
+        `${FASTAPI_BASE_URL}/api/v1/encounters/${id}/note`,
+    encounterSummary: (id: string) =>
+        `${FASTAPI_BASE_URL}/api/v1/encounters/${id}/summary`,
+    encounterVoiceNoteStatus: (id: string) =>
+        `${FASTAPI_BASE_URL}/api/v1/encounters/${id}/voice-note-status`,
+    encounterChartReview: (id: string) =>
+        `${FASTAPI_BASE_URL}/api/v1/encounters/${id}/chart-review`,
 
     // Clinical Documents
     documents: `${FASTAPI_BASE_URL}/api/v1/clinical-documents`,
     document: (id: string) =>
         `${FASTAPI_BASE_URL}/api/v1/clinical-documents/${id}`,
-    documentsByPatient: (patientId: string, types?: string[]) => {
-        const typeParam = types ? `&types=${types.join(",")}` : "";
-        return `${FASTAPI_BASE_URL}/api/v1/clinical-documents/?patientId=${patientId}${typeParam}`;
-    },
-    documentsByInteraction: (interactionId: string) =>
-        `${FASTAPI_BASE_URL}/api/v1/clinical-documents/?interactionId=${interactionId}`,
+    documentsByPatient: (patientId: string) =>
+        `${FASTAPI_BASE_URL}/api/v1/clinical-documents/?patientId=${patientId}`,
     documentUpload: `${FASTAPI_BASE_URL}/api/v1/clinical-documents/upload`,
-    documentDownload: (id: string) =>
-        `${FASTAPI_BASE_URL}/api/v1/clinical-documents/${id}/download`,
-    documentView: (id: string) =>
-        `${FASTAPI_BASE_URL}/api/v1/clinical-documents/${id}/view`,
+    documentAttachmentDownload: (documentId: string, attachmentId: string) =>
+        `${FASTAPI_BASE_URL}/api/v1/clinical-documents/${documentId}/attachments/${attachmentId}/download`,
+
+    // Diagnostic Reports
+    diagnosticReports: `${FASTAPI_BASE_URL}/api/v1/diagnostic-reports/`,
+    diagnosticReport: (id: string) =>
+        `${FASTAPI_BASE_URL}/api/v1/diagnostic-reports/${id}`,
+    diagnosticReportsByPatient: (patientId: string) =>
+        `${FASTAPI_BASE_URL}/api/v1/diagnostic-reports/?patientId=${patientId}`,
+
+    // Imaging Studies
+    imagingStudies: `${FASTAPI_BASE_URL}/api/v1/imaging-studies/`,
+    imagingStudy: (id: string) =>
+        `${FASTAPI_BASE_URL}/api/v1/imaging-studies/${id}`,
+    imagingStudiesByPatient: (patientId: string) =>
+        `${FASTAPI_BASE_URL}/api/v1/imaging-studies/?patientId=${patientId}`,
 
     // Summarization
     summarize: `${FASTAPI_BASE_URL}/api/v1/summarization`,

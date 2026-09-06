@@ -10,7 +10,7 @@ import { permissions } from "@/lib/permissions";
 export default function ProviderPage() {
     return (
         <DashboardLayout
-            requiredPermissions={[permissions.interactionsSummarize]}
+            requiredPermissions={[permissions.encountersSummarize]}
         >
             <div className="mb-6">
                 <h1 className="text-2xl font-bold text-gray-900">

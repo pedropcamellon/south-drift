@@ -12,7 +12,7 @@ CHARTREVIEW_TASK_QUEUE = "chartreview-queue"
 class ChartReviewSourceType(StrEnum):
     TIMELINE = "timeline"
     DOCUMENT = "document"
-    INTERACTION = "interaction"
+    ENCOUNTER = "encounter"
     TRANSCRIPT = "transcript"
 
 
@@ -41,10 +41,10 @@ class ChartReviewSourceChunk(BaseModel):
 
 class ChartReviewInput(BaseModel):
     patient_id: str = Field(..., min_length=1, max_length=100)
-    interaction_id: str = Field(..., min_length=1, max_length=100)
+    encounter_id: str = Field(..., min_length=1, max_length=100)
     timeline: list[ChartReviewSourceChunk] = Field(default_factory=list)
     documents: list[ChartReviewSourceChunk] = Field(default_factory=list)
-    interactions: list[ChartReviewSourceChunk] = Field(default_factory=list)
+    encounters: list[ChartReviewSourceChunk] = Field(default_factory=list)
     transcript: ChartReviewSourceChunk | None = None
 
     @model_validator(mode="after")
@@ -57,7 +57,7 @@ class ChartReviewInput(BaseModel):
     @property
     def source_chunks(self) -> list[ChartReviewSourceChunk]:
         transcript = [self.transcript] if self.transcript else []
-        return [*self.timeline, *self.documents, *self.interactions, *transcript]
+        return [*self.timeline, *self.documents, *self.encounters, *transcript]
 
 
 class ChartReviewSourceRef(BaseModel):
@@ -66,7 +66,7 @@ class ChartReviewSourceRef(BaseModel):
 
 class ChartReviewHistoryRequest(BaseModel):
     patient_id: str = Field(..., min_length=1, max_length=100)
-    interaction_id: str = Field(..., min_length=1, max_length=100)
+    encounter_id: str = Field(..., min_length=1, max_length=100)
     search_terms: list[str] = Field(..., min_length=1, max_length=3)
     max_blocks: int = Field(default=3, ge=1, le=3)
 

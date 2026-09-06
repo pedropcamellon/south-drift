@@ -1,7 +1,7 @@
-import { ClinicalDocument } from "@/types/clinicalDocument";
+import { ClinicalDocumentAttachmentView } from "@/types/clinicalDocument";
 
 export interface DocumentViewerProps {
-    document: ClinicalDocument;
+    document: ClinicalDocumentAttachmentView;
     scale: number;
     onLoadSuccess?: () => void;
     onLoadError?: (error: Error) => void;

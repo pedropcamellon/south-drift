@@ -39,6 +39,7 @@ BUILDABLE_SERVICES = frozenset(
         "folium-voicenotes-worker",
     }
 )
+OPTIONAL_SERVICES = frozenset({"folium-promtail"})
 
 PICKER_STYLE = questionary.Style(
     [
@@ -71,7 +72,7 @@ def select_services(
             if name in service_states
             else label,
             value=name,
-            checked=True,
+            checked=name not in OPTIONAL_SERVICES,
         )
         for name, label in SERVICES
     ]

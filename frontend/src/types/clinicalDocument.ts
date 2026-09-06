@@ -1,55 +1,40 @@
-export type ClinicalDocumentType =
-    | "ClinicalNote"
-    | "LabResult"
-    | "ImagingReport"
-    | "Prescription"
-    | "AdministrativeForm"
-    | "VisitSummary"
-    | "PatientUpload"
-    | "BillingCoding"
-    | "CommunicationMessage";
+export type ClinicalDocumentCategory =
+    | "clinical_note"
+    | "external_record"
+    | "visit_summary"
+    | "patient_submission";
 
-export interface ClinicalDocumentBase {
+export type ClinicalRecordStatus =
+    | "preliminary"
+    | "final"
+    | "amended"
+    | "entered_in_error";
+
+export interface Attachment {
+    id: string;
+    clinicalDocumentId: string;
+    storageKey: string;
+    fileName: string;
+    mimeType: string;
+    byteSize: number;
+    checksum?: string;
+    createdAt: string;
+}
+
+export interface ClinicalDocument {
     id: string;
     patientId: string;
-    type: ClinicalDocumentType;
+    category: ClinicalDocumentCategory;
+    status: ClinicalRecordStatus;
     title: string;
-    summary?: string;
+    authoredAt?: string;
+    receivedAt?: string;
+    encounterId?: string;
     createdAt: string;
-    updatedAt?: string;
-    createdBy: string;
-    updatedBy?: string;
-    metadata?: Record<string, any>;
-    // File attachment fields (optional - only present for uploaded documents)
-    fileUrl?: string;
-    fileName?: string;
-    fileSize?: number;
-    mimeType?: string;
+    attachments: Attachment[];
 }
 
-export type ClinicalNoteFormat = "SOAP" | "FreeText" | "Structured";
-
-export interface ClinicalNoteDocument extends ClinicalDocumentBase {
-    typeLabel: "ClinicalNote";
-    content: string;
-    format: ClinicalNoteFormat;
+export interface ClinicalDocumentAttachmentView extends ClinicalDocument {
+    attachment: Attachment;
+    fileUrl: string;
 }
-
-export type LabResultStatus =
-    | "Normal"
-    | "High"
-    | "Low"
-    | "Critical"
-    | "Pending";
-
-export interface LabResultDocument extends ClinicalDocumentBase {
-    typeLabel: "LabResult";
-    testName: string;
-    resultValue: string;
-    unit?: string;
-    status: LabResultStatus;
-}
-
-// Add other document types as needed, all extending ClinicalDocumentBase
-
-export type ClinicalDocument = ClinicalNoteDocument | LabResultDocument; // | ImagingReportDocument | ...

@@ -1,4 +1,4 @@
-"""On-demand chart-review request orchestration for the interaction API."""
+"""On-demand chart-review request orchestration for the encounter API."""
 
 import logging
 from uuid import UUID
@@ -18,31 +18,31 @@ from app.models.chart_review import ChartReviewCitationResponse, ChartReviewResp
 from app.models.db.chart_review import ChartReview
 from app.repositories.chart_review_repository import ChartReviewRepository
 from app.services.chart_review_workflow_service import ChartReviewWorkflowService
-from app.services.interaction_service import InteractionService
+from app.services.encounter_service import EncounterService
 
 logger = logging.getLogger(__name__)
 
 
 class ChartReviewRequestService:
-    """Builds active-interaction snapshots and starts durable chart-review workflows."""
+    """Builds active-encounter snapshots and starts durable chart-review workflows."""
 
     def __init__(
         self,
         repository: ChartReviewRepository,
-        interaction_service: InteractionService,
+        encounter_service: EncounterService,
         workflow_service: ChartReviewWorkflowService,
     ) -> None:
         self._repository = repository
-        self._interaction_service = interaction_service
+        self._encounter_service = encounter_service
         self._workflow_service = workflow_service
 
-    async def request_for_interaction(self, interaction_id: str) -> ChartReviewResponse:
-        """Persist and generate a draft review for an explicitly selected interaction."""
-        interaction = await self._interaction_service.get_by_id(interaction_id)
-        review_input = await self._build_input(interaction_id)
+    async def request_for_encounter(self, encounter_id: str) -> ChartReviewResponse:
+        """Persist and generate a draft review for an explicitly selected encounter."""
+        encounter = await self._encounter_service.get_by_id(UUID(encounter_id))
+        review_input = await self._build_input(encounter_id)
         chart_review = await self._repository.create_queued(
-            patient_id=UUID(str(interaction.patientId)),
-            interaction_id=UUID(interaction_id),
+            patient_id=encounter.patient_id,
+            encounter_id=UUID(encounter_id),
             review_input=review_input,
         )
         await self._repository.session.commit()
@@ -60,31 +60,33 @@ class ChartReviewRequestService:
         await self._repository.session.commit()
         return self._to_response(chart_review)
 
-    async def get_for_interaction(self, interaction_id: str) -> ChartReviewResponse | None:
-        """Return the latest persisted review for the selected interaction."""
-        interaction = await self._interaction_service.get_by_id(interaction_id)
-        review = await self._repository.get_latest_for_interaction(UUID(interaction_id))
+    async def get_for_encounter(self, encounter_id: str) -> ChartReviewResponse | None:
+        """Return the latest persisted review for the selected encounter."""
+        encounter = await self._encounter_service.get_by_id(UUID(encounter_id))
+        review = await self._repository.get_latest_for_encounter(UUID(encounter_id))
         if review is None:
             return None
-        if review.patient_id != UUID(str(interaction.patientId)):
+        if review.patient_id != encounter.patient_id:
             return None
         await self._refresh_workflow_result(review)
         return self._to_response(review)
 
-    async def retrieve_prior_interaction_blocks(
+    async def retrieve_prior_encounter_blocks(
         self, request: ChartReviewHistoryRequest
     ) -> ChartReviewHistoryResponse:
-        """Return a bounded set of patient-scoped prior interaction source blocks."""
-        active_interaction = await self._interaction_service.get_by_id(request.interaction_id)
-        if str(active_interaction.patientId) != request.patient_id:
-            raise ValueError("Chart-review history request does not match the active interaction")
+        """Return a bounded set of patient-scoped prior encounter source blocks."""
+        active_encounter = await self._encounter_service.get_by_id(UUID(request.encounter_id))
+        if str(active_encounter.patient_id) != request.patient_id:
+            raise ValueError("Chart-review history request does not match the active encounter")
 
-        prior_interactions = await self._interaction_service.get_by_patient_id(request.patient_id)
+        prior_encounters = await self._encounter_service.list_by_patient_id(
+            UUID(request.patient_id)
+        )
         source_chunks: list[ChartReviewSourceChunk] = []
-        for interaction in prior_interactions:
-            if str(interaction.id) == request.interaction_id:
+        for encounter in prior_encounters:
+            if str(encounter.id) == request.encounter_id:
                 continue
-            for chunk in self._history_chunks_matching_terms(interaction, request.search_terms):
+            for chunk in self._history_chunks_matching_terms(encounter, request.search_terms):
                 source_chunks.append(
                     ChartReviewSourceChunk(
                         source_id=f"history-{chunk.source_id}",
@@ -102,11 +104,11 @@ class ChartReviewRequestService:
 
     @staticmethod
     def _history_chunks_matching_terms(
-        interaction, search_terms: list[str]
+        encounter, search_terms: list[str]
     ) -> list[ChartReviewSourceChunk]:
-        """Return curated interaction blocks matching the agent's bounded search terms."""
-        note_chunk = ChartReviewRequestService._transcript_chunk(interaction)
-        candidate_chunks = ChartReviewRequestService._selected_interaction_chunks(interaction)
+        """Return curated encounter blocks matching the agent's bounded search terms."""
+        note_chunk = ChartReviewRequestService._transcript_chunk(encounter)
+        candidate_chunks = ChartReviewRequestService._selected_encounter_chunks(encounter)
         if note_chunk is not None:
             candidate_chunks.append(note_chunk)
         return [
@@ -115,15 +117,15 @@ class ChartReviewRequestService:
             if any(term.casefold() in chunk.content.casefold() for term in search_terms)
         ]
 
-    async def _build_input(self, interaction_id: str) -> ChartReviewInput:
-        interaction = await self._interaction_service.get_by_id(interaction_id)
-        selected_chunks = self._selected_interaction_chunks(interaction)
+    async def _build_input(self, encounter_id: str) -> ChartReviewInput:
+        encounter = await self._encounter_service.get_by_id(UUID(encounter_id))
+        selected_chunks = self._selected_encounter_chunks(encounter)
         return ChartReviewInput(
-            patient_id=str(interaction.patientId),
-            interaction_id=interaction_id,
-            interactions=selected_chunks,
+            patient_id=str(encounter.patient_id),
+            encounter_id=encounter_id,
+            encounters=selected_chunks,
             documents=[],
-            transcript=self._transcript_chunk(interaction),
+            transcript=self._transcript_chunk(encounter),
         )
 
     async def _refresh_workflow_result(self, chart_review: ChartReview) -> None:
@@ -156,58 +158,58 @@ class ChartReviewRequestService:
             await self._repository.session.commit()
 
     @staticmethod
-    def _selected_interaction_chunks(interaction) -> list[ChartReviewSourceChunk]:
+    def _selected_encounter_chunks(encounter) -> list[ChartReviewSourceChunk]:
         chunks: list[ChartReviewSourceChunk] = []
-        if interaction.summary:
+        if encounter.summary:
             chunks.append(
                 ChartReviewSourceChunk(
-                    source_id=f"interaction-summary:{interaction.id}",
-                    source_type=ChartReviewSourceType.INTERACTION,
-                    content=interaction.summary,
-                    resource_id=str(interaction.id),
-                    display_label=interaction.title,
+                    source_id=f"encounter-summary:{encounter.id}",
+                    source_type=ChartReviewSourceType.ENCOUNTER,
+                    content=encounter.summary,
+                    resource_id=str(encounter.id),
+                    display_label=encounter.title,
                     content_role="summary",
-                    occurred_at=interaction.interactionDate,
+                    occurred_at=encounter.started_at,
                 )
             )
-        if interaction.description:
+        if encounter.description:
             chunks.append(
                 ChartReviewSourceChunk(
-                    source_id=f"interaction-description:{interaction.id}",
-                    source_type=ChartReviewSourceType.INTERACTION,
-                    content=interaction.description,
-                    resource_id=str(interaction.id),
-                    display_label=interaction.title,
+                    source_id=f"encounter-description:{encounter.id}",
+                    source_type=ChartReviewSourceType.ENCOUNTER,
+                    content=encounter.description,
+                    resource_id=str(encounter.id),
+                    display_label=encounter.title,
                     content_role="description",
-                    occurred_at=interaction.interactionDate,
+                    occurred_at=encounter.started_at,
                 )
             )
         if not chunks:
             chunks.append(
                 ChartReviewSourceChunk(
-                    source_id=f"interaction:{interaction.id}",
-                    source_type=ChartReviewSourceType.INTERACTION,
-                    content=interaction.title,
-                    resource_id=str(interaction.id),
-                    display_label=interaction.title,
+                    source_id=f"encounter:{encounter.id}",
+                    source_type=ChartReviewSourceType.ENCOUNTER,
+                    content=encounter.title,
+                    resource_id=str(encounter.id),
+                    display_label=encounter.title,
                     content_role="title",
-                    occurred_at=interaction.interactionDate,
+                    occurred_at=encounter.started_at,
                 )
             )
         return chunks
 
     @staticmethod
-    def _transcript_chunk(interaction) -> ChartReviewSourceChunk | None:
-        if not interaction.note:
+    def _transcript_chunk(encounter) -> ChartReviewSourceChunk | None:
+        if not encounter.note:
             return None
         return ChartReviewSourceChunk(
-            source_id=f"interaction-note:{interaction.id}",
+            source_id=f"encounter-note:{encounter.id}",
             source_type=ChartReviewSourceType.TRANSCRIPT,
-            content=interaction.note,
-            resource_id=str(interaction.id),
-            display_label=interaction.title,
+            content=encounter.note,
+            resource_id=str(encounter.id),
+            display_label=encounter.title,
             content_role="voice-note transcript",
-            occurred_at=interaction.interactionDate,
+            occurred_at=encounter.started_at,
         )
 
     @staticmethod
@@ -217,7 +219,7 @@ class ChartReviewRequestService:
         source_refs = ChartReviewRequestService._public_source_refs(chart_review)
         return ChartReviewResponse(
             id=str(chart_review.id),
-            interactionId=str(chart_review.interaction_id),
+            encounterId=str(chart_review.encounter_id),
             status=status,
             summary=output.get("summary"),
             reasoning=output.get("reasoning"),

@@ -2,6 +2,8 @@ import { useCallback, useRef, useState } from "react";
 
 import { API_ENDPOINTS, apiJson, apiRequest } from "@/lib/api";
 
+import type { PatientEncounter } from "@/types";
+
 const MIN_RECORDING_DURATION_MS = 1000;
 
 export enum AudioState {
@@ -14,7 +16,7 @@ export enum AudioState {
     ERROR = "error",
 }
 
-export function useInteractionAudio(interactionId: string) {
+export function useEncounterAudio(encounterId: string) {
     const [audioState, setAudioState] = useState<AudioState>(AudioState.IDLE);
     const [audioUrl, setAudioUrl] = useState<string | null>(null);
     const [recordingError, setRecordingError] = useState<string | null>(null);
@@ -115,7 +117,7 @@ export function useInteractionAudio(interactionId: string) {
             formData.append("audio", audioBlob, "audio.webm");
 
             const res = await apiRequest(
-                `${API_ENDPOINTS.interaction(interactionId)}/audio`,
+                `${API_ENDPOINTS.encounter(encounterId)}/audio`,
                 {
                     method: "POST",
                     body: formData,
@@ -150,12 +152,12 @@ export function useInteractionAudio(interactionId: string) {
 
     const loadExistingAudio = useCallback(async () => {
         try {
-            const data = await apiJson<{ metadata?: { audio?: unknown } }>(
-                API_ENDPOINTS.interaction(interactionId)
+            const data = await apiJson<Pick<PatientEncounter, "audioMetadata">>(
+                API_ENDPOINTS.encounter(encounterId)
             );
-            if (data.metadata?.audio) {
+            if (data.audioMetadata) {
                 const audioRes = await apiRequest(
-                    `${API_ENDPOINTS.interaction(interactionId)}/audio`
+                    `${API_ENDPOINTS.encounter(encounterId)}/audio`
                 );
                 if (audioRes.ok) {
                     const audioBlob = await audioRes.blob();
@@ -163,10 +165,10 @@ export function useInteractionAudio(interactionId: string) {
                     setAudioState(AudioState.LOADED);
                 }
             }
-        } catch {
-            // Ignore errors loading existing audio
+        } catch (error) {
+            console.warn("Failed to load existing encounter audio:", error);
         }
-    }, [interactionId]);
+    }, [encounterId]);
 
     return {
         audioState,

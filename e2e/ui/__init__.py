@@ -1,9 +1,9 @@
-from .interactions import (
-    close_interaction_details,
-    create_interaction,
+from .encounters import (
+    close_encounter_details,
+    create_encounter,
     edit_and_save_note,
     generate_and_assert_summary,
-    open_interaction_details,
+    open_encounter_details,
     record_and_submit_audio,
 )
 from .patients import (
@@ -16,8 +16,8 @@ from .patients import (
 from .session import login, logout, new_page, verify_landing
 
 __all__ = [
-    "close_interaction_details",
-    "create_interaction",
+    "close_encounter_details",
+    "create_encounter",
     "create_patient",
     "delete_patient",
     "edit_and_save_note",
@@ -25,7 +25,7 @@ __all__ = [
     "login",
     "logout",
     "new_page",
-    "open_interaction_details",
+    "open_encounter_details",
     "open_patient_history",
     "patient_row",
     "record_and_submit_audio",

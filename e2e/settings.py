@@ -32,6 +32,6 @@ SUMMARY_WAIT_MS = int(
 CHART_REVIEW_WAIT_MS = int(
     os.getenv(
         "FOLIUM_CHART_REVIEW_WAIT_MS",
-        "180000" if _is_local_base_url(BASE_URL) else "30000",
+        "660000" if _is_local_base_url(BASE_URL) else "30000",
     )
 )

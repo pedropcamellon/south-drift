@@ -13,13 +13,13 @@ class AudioReference:
 
 @dataclass
 class VoiceNotesInput:
-    interaction_id: str
+    encounter_id: str
     patient_id: str
     audio: AudioReference
 
 
 def build_voicenotes_input(
-    interaction_id: str,
+    encounter_id: str,
     patient_id: str,
     storage_key: str,
     audio_url: str,
@@ -27,7 +27,7 @@ def build_voicenotes_input(
     content_type: str | None,
 ) -> VoiceNotesInput:
     return VoiceNotesInput(
-        interaction_id=interaction_id,
+        encounter_id=encounter_id,
         patient_id=patient_id,
         audio=AudioReference(
             storage_key=storage_key,

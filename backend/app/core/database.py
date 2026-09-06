@@ -11,12 +11,19 @@ from app.config import settings
 
 # Import all models to register them with Base.metadata
 from app.models.db import (  # noqa: F401
+    Attachment,
     ChartReview,
     ChartReviewCitation,
     ChartReviewSourceRef,
-    Document,
-    Interaction,
+    ClinicalDocument,
+    ClinicalProvenance,
+    DiagnosticReport,
+    Encounter,
+    EncounterNarrative,
+    ImagingStudy,
+    Observation,
     Patient,
+    ResourceRelationship,
 )
 from app.models.user import Base
 

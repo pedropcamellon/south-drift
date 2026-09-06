@@ -1,9 +1,7 @@
 """Patient repository - Database access layer"""
 
 import logging
-
-from typing import List, Optional
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID
 
 from sqlalchemy import select
@@ -20,13 +18,13 @@ class PatientRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get_all(self) -> List[Patient]:
+    async def get_all(self) -> list[Patient]:
         """Get all patients"""
         result = await self.session.execute(select(Patient))
         patients = result.scalars().all()
         return list(patients)
 
-    async def get_by_id(self, patient_id: str) -> Optional[Patient]:
+    async def get_by_id(self, patient_id: str) -> Patient | None:
         """Get patient by ID"""
         try:
             patient_uuid = UUID(patient_id)
@@ -47,7 +45,7 @@ class PatientRepository:
 
         return patient
 
-    async def update(self, patient_id: str, patient_data: dict) -> Optional[Patient]:
+    async def update(self, patient_id: str, patient_data: dict) -> Patient | None:
         """Update existing patient"""
         try:
             patient_uuid = UUID(patient_id)
@@ -77,14 +75,14 @@ class PatientRepository:
             if key in allowed_fields:
                 setattr(patient, key, value)
 
-        patient.updated_at = datetime.now(timezone.utc)
+        patient.updated_at = datetime.now(UTC)
         await self.session.flush()
         await self.session.refresh(patient)
 
         return patient
 
     async def delete(self, patient_id: str) -> bool:
-        """Delete patient (cascade deletes interactions and documents)"""
+        """Delete patient and its encounter and document records."""
         try:
             patient_uuid = UUID(patient_id)
         except (ValueError, AttributeError):

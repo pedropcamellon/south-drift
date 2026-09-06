@@ -1,7 +1,7 @@
 import dynamic from "next/dynamic";
 
 // Types
-import { ClinicalDocument } from "@/types/clinicalDocument";
+import { ClinicalDocumentAttachmentView } from "@/types/clinicalDocument";
 
 import { ImageViewer, ImageViewerMetadata } from "./ImageViewer";
 import { TextViewer, TextViewerMetadata } from "./TextViewer";
@@ -69,7 +69,7 @@ class DocumentViewerFactory {
     /**
      * Get the appropriate viewer component based on document MIME type
      */
-    getViewer(document: ClinicalDocument): ViewerConfig {
+    getViewer(document: ClinicalDocumentAttachmentView): ViewerConfig {
         const mimeType = this.detectMimeType(document);
         const viewer = this.viewers.find((v) => v.canHandle(mimeType));
         return viewer || this.fallbackViewer;
@@ -78,25 +78,16 @@ class DocumentViewerFactory {
     /**
      * Detect MIME type from document metadata or file extension
      */
-    private detectMimeType(document: ClinicalDocument): string {
-        // Priority 1: Use stored mimeType
-        if (document.mimeType) {
-            return document.mimeType;
+    private detectMimeType(document: ClinicalDocumentAttachmentView): string {
+        if (document.attachment.mimeType) {
+            return document.attachment.mimeType;
         }
 
-        // Priority 2: Detect from file extension
-        if (document.fileName) {
-            const extension = document.fileName.split(".").pop()?.toLowerCase();
-            return this.extensionToMimeType(extension || "");
-        }
-
-        // Priority 3: Detect from fileUrl
-        if (document.fileUrl) {
-            const extension = document.fileUrl.split(".").pop()?.toLowerCase();
-            return this.extensionToMimeType(extension || "");
-        }
-
-        return "application/octet-stream"; // Unknown type
+        const extension = document.attachment.fileName
+            .split(".")
+            .pop()
+            ?.toLowerCase();
+        return this.extensionToMimeType(extension || "");
     }
 
     /**

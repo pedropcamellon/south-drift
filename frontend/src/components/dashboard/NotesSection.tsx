@@ -4,12 +4,12 @@ import { FaMicrophone, FaPause } from "react-icons/fa";
 
 import { Button } from "@/components/ui/button";
 
-import { apiRequest, API_ENDPOINTS } from "@/lib/api";
+import { API_ENDPOINTS, apiRequest } from "@/lib/api";
 
-import { AudioState, useInteractionAudio } from "@/hooks/useInteractionAudio";
+import { AudioState, useEncounterAudio } from "@/hooks/useEncounterAudio";
 import { TranscriptionState } from "@/hooks/useTranscription";
 
-import { PatientInteraction } from "@/types";
+import { PatientEncounter } from "@/types";
 
 enum NoteEditState {
     VIEWING = "viewing",
@@ -18,24 +18,24 @@ enum NoteEditState {
 }
 
 interface NotesSectionProps {
-    interaction: PatientInteraction;
-    onInteractionUpdate: (interaction: PatientInteraction) => void;
+    encounter: PatientEncounter;
+    onEncounterUpdate: (encounter: PatientEncounter) => void;
     onAudioSubmitted?: () => void;
     transcriptionState?: TranscriptionState;
 }
 
 export function NotesSection({
-    interaction,
-    onInteractionUpdate,
+    encounter,
+    onEncounterUpdate,
     onAudioSubmitted,
     transcriptionState = TranscriptionState.IDLE,
 }: NotesSectionProps) {
-    const [note, setNote] = useState(interaction.note || "");
+    const [note, setNote] = useState(encounter.note || "");
     const [editState, setEditState] = useState<NoteEditState>(
         NoteEditState.VIEWING
     );
     const [editedNote, setEditedNote] = useState("");
-    const [lastSavedNote, setLastSavedNote] = useState(interaction.note || "");
+    const [lastSavedNote, setLastSavedNote] = useState(encounter.note || "");
     const [saveError, setSaveError] = useState<string | null>(null);
     const noteInputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -48,7 +48,7 @@ export function NotesSection({
         stopRecording,
         submitAudio,
         loadExistingAudio,
-    } = useInteractionAudio(interaction.id);
+    } = useEncounterAudio(encounter.id);
 
     // Call parent's polling when audio is submitted successfully
     useEffect(() => {
@@ -57,11 +57,11 @@ export function NotesSection({
         }
     }, [audioState, onAudioSubmitted]);
 
-    // Sync note state when interaction changes
+    // Sync note state when encounter changes
     useEffect(() => {
-        setNote(interaction.note || "");
-        setLastSavedNote(interaction.note || "");
-    }, [interaction.note]);
+        setNote(encounter.note || "");
+        setLastSavedNote(encounter.note || "");
+    }, [encounter.note]);
 
     // Handle transcription state changes
     useEffect(() => {
@@ -73,22 +73,22 @@ export function NotesSection({
         if (transcriptionState === TranscriptionState.COMPLETE) {
             // When transcription completes, show the new note in viewing mode
             setEditState(NoteEditState.VIEWING);
-            setNote(interaction.note || "");
-            setLastSavedNote(interaction.note || "");
+            setNote(encounter.note || "");
+            setLastSavedNote(encounter.note || "");
         } else if (transcriptionState === TranscriptionState.PARTIAL) {
             setEditState(NoteEditState.VIEWING);
-            setNote(interaction.note || "");
-            setLastSavedNote(interaction.note || "");
+            setNote(encounter.note || "");
+            setLastSavedNote(encounter.note || "");
         } else if (transcriptionState === TranscriptionState.ERROR) {
             // When transcription fails, ensure we're in viewing mode to show the error
             setEditState(NoteEditState.VIEWING);
         }
-    }, [transcriptionState, interaction.note, editState]);
+    }, [transcriptionState, encounter.note, editState]);
 
-    // Load audio only when interaction ID changes (not when note changes)
+    // Load audio only when encounter ID changes (not when note changes)
     useEffect(() => {
         loadExistingAudio();
-    }, [interaction.id, loadExistingAudio]);
+    }, [encounter.id, loadExistingAudio]);
 
     useEffect(() => {
         if (editState === NoteEditState.EDITING) {
@@ -102,17 +102,17 @@ export function NotesSection({
         setSaveError(null);
         try {
             const res = await apiRequest(
-                API_ENDPOINTS.interactionNote(interaction.id),
+                API_ENDPOINTS.encounterNote(encounter.id),
                 {
                     method: "PATCH",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ note: editedNote }),
+                    body: JSON.stringify({ content: editedNote }),
                 }
             );
             if (!res.ok) throw new Error("Failed to save note");
             setNote(editedNote);
             setLastSavedNote(editedNote);
-            onInteractionUpdate({ ...interaction, note: editedNote });
+            onEncounterUpdate({ ...encounter, note: editedNote });
             setEditState(NoteEditState.VIEWING);
         } catch (e) {
             setSaveError("Failed to save note");

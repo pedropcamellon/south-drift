@@ -6,52 +6,50 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 
-import { TranscriptionState } from "@/hooks/useTranscription";
+import type { TranscriptionState } from "@/hooks/useTranscription";
 
-import { PatientInteraction } from "@/types";
+import type { PatientEncounter } from "@/types";
 
+import { ChartReviewSection } from "./ChartReviewSection";
 import { NotesSection } from "./NotesSection";
 import { SummarySection } from "./SummarySection";
-import { ChartReviewSection } from "./ChartReviewSection";
 
-interface PatientInteractionDetailsModalProps {
-    interaction: PatientInteraction;
+interface EncounterDetailsModalProps {
+    encounter: PatientEncounter;
     open: boolean;
     onClose: () => void;
     onAudioSubmitted: () => void;
     transcriptionState: TranscriptionState;
 }
 
-export default function PatientInteractionDetailsModal({
-    interaction,
+export default function EncounterDetailsModal({
+    encounter,
     open,
     onClose,
     onAudioSubmitted,
     transcriptionState,
-}: PatientInteractionDetailsModalProps) {
+}: EncounterDetailsModalProps) {
     return (
         <Dialog open={open} onOpenChange={onClose}>
-            <DialogContent className="w-full max-w-md sm:max-w-lg md:max-w-2xl max-h-[85vh] flex flex-col">
+            <DialogContent className="flex max-h-[85vh] w-full max-w-2xl flex-col">
                 <DialogHeader>
-                    <DialogTitle>Interaction Details</DialogTitle>
+                    <DialogTitle>Encounter Details</DialogTitle>
                 </DialogHeader>
-
                 <div className="flex flex-col gap-4 overflow-y-auto pr-3">
                     <SummarySection
-                        interaction={interaction}
-                        note={interaction.note || ""}
-                        onInteractionUpdate={() => {}}
+                        encounter={encounter}
+                        note={encounter.note || ""}
+                        onEncounterUpdate={() => {}}
                     />
                     <NotesSection
-                        interaction={interaction}
-                        onInteractionUpdate={() => {}}
+                        encounter={encounter}
+                        onEncounterUpdate={() => {}}
                         onAudioSubmitted={onAudioSubmitted}
                         transcriptionState={transcriptionState}
                     />
-                    <ChartReviewSection interactionId={interaction.id} />
+                    <ChartReviewSection encounterId={encounter.id} />
                 </div>
-
-                <div className="pt-4 border-t flex justify-end">
+                <div className="flex justify-end border-t pt-4">
                     <Button variant="secondary" onClick={onClose}>
                         Close
                     </Button>

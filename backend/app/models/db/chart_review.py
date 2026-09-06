@@ -10,7 +10,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.user import Base
 
 if TYPE_CHECKING:
-    from app.models.db.interaction import Interaction
+    from app.models.db.clinical import Encounter
     from app.models.db.patient import Patient
 
 
@@ -23,8 +23,8 @@ class ChartReview(Base):
     patient_id: Mapped[UUID] = mapped_column(
         ForeignKey("patient.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    interaction_id: Mapped[UUID] = mapped_column(
-        ForeignKey("interaction.id", ondelete="CASCADE"), nullable=False, index=True
+    encounter_id: Mapped[UUID] = mapped_column(
+        ForeignKey("encounter.id", ondelete="CASCADE"), nullable=False, index=True
     )
     status: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
     input_snapshot: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
@@ -44,7 +44,7 @@ class ChartReview(Base):
     )
 
     patient: Mapped["Patient"] = relationship("Patient")
-    interaction: Mapped["Interaction"] = relationship("Interaction")
+    encounter: Mapped["Encounter"] = relationship("Encounter")
     input_source_refs: Mapped[list["ChartReviewSourceRef"]] = relationship(
         "ChartReviewSourceRef", back_populates="chart_review", cascade="all, delete-orphan"
     )

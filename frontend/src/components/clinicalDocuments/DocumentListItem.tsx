@@ -16,29 +16,31 @@ export function DocumentListItem({
     onDownload,
     onDelete,
 }: DocumentListItemProps) {
+    const attachment = document.attachments[0];
+
     return (
         <li className="py-2 flex justify-between items-start">
             <div className="flex-1">
                 <span className="font-medium">{document.title}</span>
                 <span className="ml-2 text-xs bg-slate-100 rounded px-2 py-0.5">
-                    {document.type}
+                    {document.category.replace("_", " ")}
                 </span>
                 <span className="ml-2 text-xs text-slate-500">
                     {new Date(document.createdAt).toLocaleDateString()}
                 </span>
-                {document.fileName && (
+                {attachment && (
                     <span className="ml-2 text-xs text-blue-600 inline-flex items-center gap-1">
                         <Paperclip className="w-3 h-3" />
-                        {document.fileName}
+                        {attachment.fileName}
                     </span>
                 )}
                 <div className="text-slate-600 text-sm mt-1">
-                    {document.summary || "No summary."}
+                    {document.status}
                 </div>
             </div>
 
             <div className="flex gap-1 ml-2">
-                {document.fileUrl && (
+                {attachment && (
                     <>
                         <Button
                             variant="ghost"

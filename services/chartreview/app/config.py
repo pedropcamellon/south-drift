@@ -12,9 +12,12 @@ class Settings(BaseSettings):
     ai_model_name: str = "mediphi-clinical"
     chartreview_backend_url: str
     chartreview_internal_token: str
-    request_timeout_seconds: float = 120.0
-    activity_start_to_close_timeout_seconds: int = 120
+    log_level: str = "INFO"
+    request_timeout_seconds: float = 600.0
+    activity_start_to_close_timeout_seconds: int = 600
     activity_max_attempts: int = 2
+    history_decision_max_tokens: int = 64
+    review_max_tokens: int = 512
 
     class Config:
         env_file = ".env"

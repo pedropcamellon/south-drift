@@ -10,11 +10,11 @@ class Permission:
     PATIENTS_CREATE = "patients:create"
     PATIENTS_UPDATE = "patients:update"
     PATIENTS_DELETE = "patients:delete"
-    INTERACTIONS_READ = "interactions:read"
-    INTERACTIONS_CREATE = "interactions:create"
-    INTERACTIONS_UPDATE = "interactions:update"
-    INTERACTIONS_DELETE = "interactions:delete"
-    INTERACTIONS_SUMMARIZE = "interactions:summarize"
+    ENCOUNTERS_READ = "encounters:read"
+    ENCOUNTERS_CREATE = "encounters:create"
+    ENCOUNTERS_UPDATE = "encounters:update"
+    ENCOUNTERS_DELETE = "encounters:delete"
+    ENCOUNTERS_SUMMARIZE = "encounters:summarize"
     DOCUMENTS_READ = "documents:read"
     DOCUMENTS_CREATE = "documents:create"
     DOCUMENTS_UPDATE = "documents:update"
@@ -31,11 +31,11 @@ ALL_PERMISSIONS = {
     Permission.PATIENTS_CREATE,
     Permission.PATIENTS_UPDATE,
     Permission.PATIENTS_DELETE,
-    Permission.INTERACTIONS_READ,
-    Permission.INTERACTIONS_CREATE,
-    Permission.INTERACTIONS_UPDATE,
-    Permission.INTERACTIONS_DELETE,
-    Permission.INTERACTIONS_SUMMARIZE,
+    Permission.ENCOUNTERS_READ,
+    Permission.ENCOUNTERS_CREATE,
+    Permission.ENCOUNTERS_UPDATE,
+    Permission.ENCOUNTERS_DELETE,
+    Permission.ENCOUNTERS_SUMMARIZE,
     Permission.DOCUMENTS_READ,
     Permission.DOCUMENTS_CREATE,
     Permission.DOCUMENTS_UPDATE,
@@ -55,11 +55,11 @@ ROLE_PERMISSIONS: dict[UserRole, set[str]] = {
         Permission.PATIENTS_CREATE,
         Permission.PATIENTS_UPDATE,
         Permission.PATIENTS_DELETE,
-        Permission.INTERACTIONS_READ,
-        Permission.INTERACTIONS_CREATE,
-        Permission.INTERACTIONS_UPDATE,
-        Permission.INTERACTIONS_DELETE,
-        Permission.INTERACTIONS_SUMMARIZE,
+        Permission.ENCOUNTERS_READ,
+        Permission.ENCOUNTERS_CREATE,
+        Permission.ENCOUNTERS_UPDATE,
+        Permission.ENCOUNTERS_DELETE,
+        Permission.ENCOUNTERS_SUMMARIZE,
         Permission.DOCUMENTS_READ,
         Permission.DOCUMENTS_CREATE,
         Permission.DOCUMENTS_UPDATE,
@@ -71,9 +71,9 @@ ROLE_PERMISSIONS: dict[UserRole, set[str]] = {
         Permission.PATIENTS_READ,
         Permission.PATIENTS_CREATE,
         Permission.PATIENTS_UPDATE,
-        Permission.INTERACTIONS_READ,
-        Permission.INTERACTIONS_CREATE,
-        Permission.INTERACTIONS_UPDATE,
+        Permission.ENCOUNTERS_READ,
+        Permission.ENCOUNTERS_CREATE,
+        Permission.ENCOUNTERS_UPDATE,
         Permission.VOICE_RECORD,
         Permission.VOICE_REVIEW,
     },

@@ -4,6 +4,7 @@ services:
     build:
       context: ../..
       dockerfile: services/transcribe/Dockerfile
+      target: development
       args:
         PROVIDER: whisper # Change to: aws, azure
     env_file:

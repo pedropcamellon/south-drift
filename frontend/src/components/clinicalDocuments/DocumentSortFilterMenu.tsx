@@ -1,4 +1,4 @@
-import { ClinicalDocumentType } from "@/types/clinicalDocument";
+import { ClinicalDocumentCategory } from "@/types/clinicalDocument";
 import { CommonListSortOption } from "@/types/sort";
 import { ArrowUpDown, ChevronDown } from "lucide-react";
 
@@ -14,35 +14,25 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const DOCUMENT_TYPES: ClinicalDocumentType[] = [
-    "ClinicalNote",
-    "LabResult",
-    "ImagingReport",
-    "Prescription",
-    "AdministrativeForm",
-    "VisitSummary",
-    "PatientUpload",
-    "BillingCoding",
-    "CommunicationMessage",
+const DOCUMENT_TYPES: ClinicalDocumentCategory[] = [
+    "clinical_note",
+    "external_record",
+    "visit_summary",
+    "patient_submission",
 ];
 
-const TYPE_LABELS: Record<ClinicalDocumentType, string> = {
-    ClinicalNote: "Clinical Note",
-    LabResult: "Lab Result",
-    ImagingReport: "Imaging Report",
-    Prescription: "Prescription",
-    AdministrativeForm: "Admin Form",
-    VisitSummary: "Visit Summary",
-    PatientUpload: "Patient Upload",
-    BillingCoding: "Billing/Coding",
-    CommunicationMessage: "Communication",
+const TYPE_LABELS: Record<ClinicalDocumentCategory, string> = {
+    clinical_note: "Clinical Note",
+    external_record: "External Record",
+    visit_summary: "Visit Summary",
+    patient_submission: "Patient Submission",
 };
 
 interface DocumentSortFilterMenuProps {
     sortBy: CommonListSortOption;
-    selectedTypes: ClinicalDocumentType[];
+    selectedTypes: ClinicalDocumentCategory[];
     onSortChange: (sort: CommonListSortOption) => void;
-    onTypeToggle: (type: ClinicalDocumentType) => void;
+    onTypeToggle: (type: ClinicalDocumentCategory) => void;
     onClearFilters: () => void;
 }
 
@@ -83,9 +73,6 @@ export function DocumentSortFilterMenu({
                     </DropdownMenuRadioItem>
                     <DropdownMenuRadioItem value="createdAt-asc">
                         Date Created (Oldest)
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="updatedAt-desc">
-                        Last Modified
                     </DropdownMenuRadioItem>
                     <DropdownMenuRadioItem value="title-asc">
                         Title (A-Z)

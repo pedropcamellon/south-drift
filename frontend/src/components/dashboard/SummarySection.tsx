@@ -2,14 +2,11 @@ import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 
-import { apiRequest, API_ENDPOINTS } from "@/lib/api";
+import { API_ENDPOINTS, apiRequest } from "@/lib/api";
 
-import {
-    SummaryState,
-    useInteractionSummary,
-} from "@/hooks/useInteractionSummary";
+import { SummaryState, useEncounterSummary } from "@/hooks/useEncounterSummary";
 
-import { PatientInteraction } from "@/types";
+import { PatientEncounter } from "@/types";
 
 enum SummaryEditState {
     VIEWING = "viewing",
@@ -18,15 +15,15 @@ enum SummaryEditState {
 }
 
 interface SummarySectionProps {
-    interaction: PatientInteraction;
+    encounter: PatientEncounter;
     note: string;
-    onInteractionUpdate: (interaction: PatientInteraction) => void;
+    onEncounterUpdate: (encounter: PatientEncounter) => void;
 }
 
 export function SummarySection({
-    interaction,
+    encounter,
     note,
-    onInteractionUpdate,
+    onEncounterUpdate,
 }: SummarySectionProps) {
     const [editState, setEditState] = useState<SummaryEditState>(
         SummaryEditState.VIEWING
@@ -41,9 +38,9 @@ export function SummarySection({
         summaryError,
         generateSummaryFromTranscript,
         setSummary,
-    } = useInteractionSummary((formattedSummary, structuredData) => {
-        onInteractionUpdate({
-            ...interaction,
+    } = useEncounterSummary((formattedSummary, structuredData) => {
+        onEncounterUpdate({
+            ...encounter,
             summary: formattedSummary,
             structuredSummary: structuredData,
             chiefComplaint: structuredData.chief_complaint,
@@ -53,8 +50,8 @@ export function SummarySection({
     });
 
     useEffect(() => {
-        setSummary(interaction.summary || "");
-    }, [interaction.summary, setSummary]);
+        setSummary(encounter.summary || "");
+    }, [encounter.summary, setSummary]);
 
     useEffect(() => {
         if (editState === SummaryEditState.EDITING) {
@@ -64,7 +61,7 @@ export function SummarySection({
     }, [editState, summary]);
 
     const handleGenerate = () => {
-        generateSummaryFromTranscript(note, interaction.type);
+        generateSummaryFromTranscript(note, encounter.encounterType);
     };
 
     const handleSave = async () => {
@@ -72,7 +69,7 @@ export function SummarySection({
         setSaveError(null);
         try {
             const res = await apiRequest(
-                API_ENDPOINTS.interactionSummary(interaction.id),
+                API_ENDPOINTS.encounterSummary(encounter.id),
                 {
                     method: "PATCH",
                     headers: { "Content-Type": "application/json" },
@@ -81,7 +78,7 @@ export function SummarySection({
             );
             if (!res.ok) throw new Error("Failed to save summary");
             setSummary(editedSummary);
-            onInteractionUpdate({ ...interaction, summary: editedSummary });
+            onEncounterUpdate({ ...encounter, summary: editedSummary });
             setEditState(SummaryEditState.VIEWING);
         } catch (e) {
             setSaveError("Failed to save summary");
@@ -103,7 +100,9 @@ export function SummarySection({
                         size="sm"
                         variant="tertiary"
                         onClick={handleGenerate}
-                        disabled={summaryState === SummaryState.GENERATING || !note}
+                        disabled={
+                            summaryState === SummaryState.GENERATING || !note
+                        }
                         isLoading={summaryState === SummaryState.GENERATING}
                         loadingText="Generating..."
                     >

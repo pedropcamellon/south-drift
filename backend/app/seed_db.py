@@ -6,7 +6,15 @@ Run with: python -m app.seed_db
 import asyncio
 
 from app.core.database import async_session_maker, create_db_and_tables
-from app.seed import seed_documents, seed_interactions, seed_patients, seed_users
+from app.seed import (
+    seed_clinical_documents,
+    seed_diagnostic_reports,
+    seed_encounters,
+    seed_imaging_studies,
+    seed_patients,
+    seed_users,
+)
+from app.services.storage import get_storage
 
 
 async def main():
@@ -20,7 +28,7 @@ async def main():
     async with async_session_maker() as session:
         await seed_users(session)
 
-    # Seed patients, interactions, and documents
+    # Seed patients, encounters, and documents
     async with async_session_maker() as session:
         print("[DEBUG seed_db] Calling seed_patients...")
         patients = await seed_patients(session)
@@ -29,12 +37,16 @@ async def main():
         print(f"[DEBUG seed_db] bool(patients) = {bool(patients)}")
 
         if patients:
-            print("[DEBUG seed_db] Patients exist, calling seed_interactions...")
-            interactions = await seed_interactions(session, patients)
-            print("[DEBUG seed_db] Calling seed_documents...")
-            await seed_documents(session, patients, interactions)
+            print("[DEBUG seed_db] Patients exist, calling seed_encounters...")
+            await seed_encounters(session, patients)
+            print("[DEBUG seed_db] Calling seed_diagnostic_reports...")
+            await seed_diagnostic_reports(session, patients)
+            await seed_imaging_studies(session, patients)
+            print("[DEBUG seed_db] Calling seed_clinical_documents...")
+            storage = await get_storage()
+            await seed_clinical_documents(session, storage, patients)
         else:
-            print("[DEBUG seed_db] No patients found, skipping interactions and documents")
+            print("[DEBUG seed_db] No patients found, skipping encounters and documents")
 
     print("\nDatabase seeding complete!")
 

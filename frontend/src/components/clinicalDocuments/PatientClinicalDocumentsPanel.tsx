@@ -2,7 +2,10 @@
 
 import { useState } from "react";
 
-import { ClinicalDocument } from "@/types/clinicalDocument";
+import {
+    ClinicalDocument,
+    ClinicalDocumentAttachmentView,
+} from "@/types/clinicalDocument";
 import { Upload } from "lucide-react";
 
 import { DeleteDocumentDialog } from "@/components/documents/DeleteDocumentDialog";
@@ -10,7 +13,7 @@ import { DocumentUploadModal } from "@/components/documents/DocumentUploadModal"
 import { DocumentViewerModal } from "@/components/documents/DocumentViewerModal";
 import { Button } from "@/components/ui/button";
 
-import { API_ENDPOINTS } from "@/lib/api";
+import { API_ENDPOINTS, apiRequest } from "@/lib/api";
 
 import { usePatientDocuments } from "@/hooks/usePatientDocuments";
 
@@ -45,7 +48,7 @@ export function PatientClinicalDocumentsPanel({
     const [viewerModalOpen, setViewerModalOpen] = useState(false);
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [selectedDocument, setSelectedDocument] =
-        useState<ClinicalDocument | null>(null);
+        useState<ClinicalDocumentAttachmentView | null>(null);
     const [documentToDelete, setDocumentToDelete] =
         useState<ClinicalDocument | null>(null);
 
@@ -54,20 +57,23 @@ export function PatientClinicalDocumentsPanel({
     };
 
     const handleViewDocument = async (doc: ClinicalDocument) => {
-        // Fetch presigned URL from backend
+        const attachment = doc.attachments[0];
+        if (!attachment) return;
+
         try {
-            const viewUrl = API_ENDPOINTS.documentView(doc.id);
-            const response = await fetch(viewUrl);
+            const response = await apiRequest(
+                API_ENDPOINTS.documentAttachmentDownload(doc.id, attachment.id)
+            );
 
             if (!response.ok) {
                 throw new Error("Failed to get document view URL");
             }
 
-            // Backend redirects to presigned URL, get the final URL
-            const presignedUrl = response.url;
-
-            // Create a modified document with the presigned URL
-            const docWithPresignedUrl = { ...doc, fileUrl: presignedUrl };
+            const docWithPresignedUrl = {
+                ...doc,
+                attachment,
+                fileUrl: response.url,
+            };
             setSelectedDocument(docWithPresignedUrl);
             setViewerModalOpen(true);
         } catch (err) {
@@ -77,9 +83,16 @@ export function PatientClinicalDocumentsPanel({
     };
 
     const handleDownloadDocument = async (doc: ClinicalDocument) => {
-        // Use backend download endpoint which returns presigned URL
-        const downloadUrl = API_ENDPOINTS.documentDownload(doc.id);
-        window.open(downloadUrl, "_blank");
+        const attachment = doc.attachments[0];
+        if (!attachment) return;
+
+        const response = await apiRequest(
+            API_ENDPOINTS.documentAttachmentDownload(doc.id, attachment.id)
+        );
+        if (!response.ok) {
+            throw new Error("Failed to get document download URL");
+        }
+        window.open(response.url, "_blank");
     };
 
     const handleDeleteClick = (doc: ClinicalDocument) => {

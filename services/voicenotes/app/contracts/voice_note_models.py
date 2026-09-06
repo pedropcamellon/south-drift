@@ -49,7 +49,7 @@ class SummaryResult:
 
 @dataclass
 class VoiceNoteWorkflowResult:
-    interaction_id: str
+    encounter_id: str
     status: VoiceNoteWorkflowStatus
     transcript_saved: bool
     transcript: str | None = None
@@ -58,7 +58,7 @@ class VoiceNoteWorkflowResult:
 
     def to_payload(self) -> dict[str, Any]:
         return {
-            "interaction_id": self.interaction_id,
+            "encounter_id": self.encounter_id,
             "status": self.status.value,
             "transcript": self.transcript,
             "transcript_saved": self.transcript_saved,

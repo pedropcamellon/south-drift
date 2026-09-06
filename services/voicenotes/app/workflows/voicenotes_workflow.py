@@ -35,7 +35,7 @@ class VoiceNoteWorkflow:
             )
 
         return VoiceNoteWorkflowResult(
-            interaction_id=input_data.interaction_id,
+            encounter_id=input_data.encounter_id,
             status=VoiceNoteWorkflowStatus.COMPLETED,
             transcript_saved=True,
             transcript=transcript_result.transcript,

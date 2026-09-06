@@ -23,12 +23,12 @@ class ChartReviewCitationResponse(BaseModel):
 
 
 class ChartReviewResponse(BaseModel):
-    """Persisted draft-support review returned to the interaction UI."""
+    """Persisted draft-support review returned to the encounter UI."""
 
     model_config = ConfigDict(populate_by_name=True)
 
     id: str
-    interaction_id: str = Field(..., alias="interactionId")
+    encounter_id: str = Field(..., alias="encounterId")
     status: ChartReviewStatus
     summary: str | None = None
     reasoning: str | None = None

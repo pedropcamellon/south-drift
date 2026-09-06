@@ -17,12 +17,12 @@ class ChartReviewRepository:
         self.session = session
 
     async def create_queued(
-        self, patient_id: UUID, interaction_id: UUID, review_input: ChartReviewInput
+        self, patient_id: UUID, encounter_id: UUID, review_input: ChartReviewInput
     ) -> ChartReview:
         """Create a queued review with a JSON-safe snapshot and source references."""
         chart_review = ChartReview(
             patient_id=patient_id,
-            interaction_id=interaction_id,
+            encounter_id=encounter_id,
             status=ChartReviewStatus.QUEUED.value,
             input_snapshot=review_input.model_dump(mode="json"),
             input_source_refs=[
@@ -49,11 +49,11 @@ class ChartReviewRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_latest_for_interaction(self, interaction_id: UUID) -> ChartReview | None:
-        """Load the most recently requested review for an interaction."""
+    async def get_latest_for_encounter(self, encounter_id: UUID) -> ChartReview | None:
+        """Load the most recently requested review for an encounter."""
         result = await self.session.execute(
             select(ChartReview)
-            .where(ChartReview.interaction_id == interaction_id)
+            .where(ChartReview.encounter_id == encounter_id)
             .options(
                 selectinload(ChartReview.input_source_refs),
                 selectinload(ChartReview.cited_source_refs),

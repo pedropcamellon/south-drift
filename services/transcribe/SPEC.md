@@ -207,11 +207,21 @@ For long audio files (>5 minutes) or high-volume workloads, consider message que
 - 3-second audio: ~0.6 seconds
 - CPU usage: ~80-100% during transcription (single-threaded)
 
-**Model Caching**: Downloaded once during Docker build, cached in `/app/.cache/huggingface`. Startup time <5 seconds (model already in memory).
+**Model Caching**: On first local startup, the model downloads into the named
+`whisper-models` Docker volume at
+`/workspace/services/transcribe/.cache/huggingface`. Later container restarts
+and image rebuilds reuse that volume. The first startup requires network access
+to Hugging Face; later startup does not, provided the volume is retained. The
+`production` Docker target instead preloads the build-pinned
+`WHISPER_MODEL_SIZE` into `/opt/whisper-cache`, so production startup does not
+depend on a writable runtime cache volume.
 
 **Language Support**: Auto-detect or specify language code (`en-US` → `en`). Supports 99 languages.
 
-**No External Dependencies**: Runs entirely offline. No API keys, no network calls (except audio download). HIPAA compliant by default.
+**No External Dependencies**: After the model cache is populated, transcription
+runs locally without model-provider API credentials. Network access remains
+necessary to retrieve the source audio and to initially populate a missing
+model cache.
 
 **Limitations**:
 
@@ -255,18 +265,18 @@ For long audio files (>5 minutes) or high-volume workloads, consider message que
 
 ## Provider Comparison
 
-| Feature | Self-Hosted Whisper | AWS Transcribe | Azure Speech |
-|---------|------------------------|----------------|--------------|
-| **Status** | Production Ready | Planned | Planned |
-| **HIPAA Compliance** | Built-in (no BAA) | Requires BAA | Requires BAA |
-| **Setup Cost** | $0 | $0 | $0 |
-| **Usage Cost** | Infrastructure only (~$50-100/mo) | $0.024/minute | $0.02/minute |
-| **Accuracy** | Good (base model 85-90%) | Excellent (95%+) | Excellent (95%+) |
-| **Speed** | 0.5-0.6s (1-3s audio) | 5-15s | 2-5s (streaming) |
-| **Speaker Diarization** | No (planned) | Yes | Yes |
-| **Custom Vocabulary** | No | Yes | Yes |
-| **Offline Support** | Yes | No | No |
-| **Languages** | 99 languages | 30+ languages | 100+ languages |
+| Feature                 | Self-Hosted Whisper               | AWS Transcribe   | Azure Speech     |
+| ----------------------- | --------------------------------- | ---------------- | ---------------- |
+| **Status**              | Production Ready                  | Planned          | Planned          |
+| **HIPAA Compliance**    | Built-in (no BAA)                 | Requires BAA     | Requires BAA     |
+| **Setup Cost**          | $0                                | $0               | $0               |
+| **Usage Cost**          | Infrastructure only (~$50-100/mo) | $0.024/minute    | $0.02/minute     |
+| **Accuracy**            | Good (base model 85-90%)          | Excellent (95%+) | Excellent (95%+) |
+| **Speed**               | 0.5-0.6s (1-3s audio)             | 5-15s            | 2-5s (streaming) |
+| **Speaker Diarization** | No (planned)                      | Yes              | Yes              |
+| **Custom Vocabulary**   | No                                | Yes              | Yes              |
+| **Offline Support**     | Yes                               | No               | No               |
+| **Languages**           | 99 languages                      | 30+ languages    | 100+ languages   |
 
 **Recommendation**: Whisper for MVP and HIPAA compliance. Consider AWS/Azure for higher accuracy requirements or speaker diarization needs (after signing BAA).
 

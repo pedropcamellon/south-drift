@@ -6,42 +6,42 @@ from playwright.sync_api import Page
 from .session import log_step
 
 
-def create_interaction(page: Page, flow: FlowCase, title: str) -> str:
-    log_step(flow.name, f"Creating interaction {title}")
-    page.get_by_role("button", name="New Interaction").click(timeout=15000)
-    page.get_by_role("heading", name="Add New Interaction").wait_for(
+def create_encounter(page: Page, flow: FlowCase, title: str) -> str:
+    log_step(flow.name, f"Creating encounter {title}")
+    page.get_by_role("button", name="New Encounter").click(timeout=15000)
+    page.get_by_role("heading", name="Add Encounter").wait_for(
         state="visible", timeout=15000
     )
 
-    page.locator("#type").click(timeout=15000)
-    page.get_by_role("option", name="Voice Note").click(timeout=15000)
+    page.locator("#encounterType").click(timeout=15000)
+    page.get_by_role("option", name="Outpatient").click(timeout=15000)
     page.get_by_label("Title").fill(title)
     page.get_by_label("Description").fill(
         "Provider voice note workflow created by Playwright."
     )
-    page.get_by_label("Provider Name").fill("Dr. Folium")
+    page.get_by_label("Clinician name").fill("Dr. Folium")
 
     with page.expect_response(
         lambda response: (
             response.request.method == "POST"
-            and "/api/v1/interactions" in response.url
+            and "/api/v1/encounters" in response.url
             and response.status == 201
         ),
         timeout=20000,
     ) as response_info:
-        page.get_by_role("button", name="Create Interaction").click(timeout=15000)
+        page.get_by_role("button", name="Create Encounter").click(timeout=15000)
 
-    interaction = response_info.value.json()
+    encounter = response_info.value.json()
     page.get_by_role("button", name=f"View details for {title}").wait_for(
         state="visible", timeout=20000
     )
-    return interaction["id"]
+    return encounter["id"]
 
 
-def open_interaction_details(page: Page, flow: FlowCase, title: str) -> None:
-    log_step(flow.name, f"Opening interaction details for {title}")
+def open_encounter_details(page: Page, flow: FlowCase, title: str) -> None:
+    log_step(flow.name, f"Opening encounter details for {title}")
     page.get_by_role("button", name=f"View details for {title}").click(timeout=15000)
-    page.get_by_role("heading", name="Interaction Details").wait_for(
+    page.get_by_role("heading", name="Encounter Details").wait_for(
         state="visible", timeout=15000
     )
 
@@ -87,6 +87,6 @@ def generate_and_assert_summary(
     ).wait_for(state="hidden", timeout=timeout_ms)
 
 
-def close_interaction_details(page: Page) -> None:
+def close_encounter_details(page: Page) -> None:
     dialog = page.get_by_role("dialog")
     dialog.get_by_role("button", name="Close").first.click(timeout=15000)
