@@ -36,10 +36,10 @@ async def lifespan(app: FastAPI):
     logger.info(f"{app_settings.app_name} v{app_settings.version} starting...")
     logger.info("API documentation available at: /docs")
 
-    # Initialize database tables
-    from app.core.database import async_session_maker, create_db_and_tables
+    # Schema migrations run before Uvicorn starts in Docker Compose.
+    from app.core.database import async_session_maker, verify_database_connection
 
-    await create_db_and_tables()
+    await verify_database_connection()
 
     # Initialize storage before creating stored document attachments.
     from app.services.storage import get_storage

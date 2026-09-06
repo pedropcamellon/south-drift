@@ -19,8 +19,9 @@ on:
         required: true
         type: string
       ecr_repository:
-        required: true
+        required: false
         type: string
+        default: ""
     secrets:
       AWS_ACCESS_KEY_ID:
         required: true
@@ -56,12 +57,27 @@ jobs:
         id: ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Push Image
+      - name: Resolve ECR Repository
+        id: repository
+        env:
+          ECR_REPOSITORY: ${{ inputs.ecr_repository }}
+          ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
+          IMAGE_NAME: ${{ inputs.image_name }}
         run: |
-          docker tag ${{ inputs.image_name }}:${{ github.sha }} ${{ inputs.ecr_repository }}:${{ github.sha }}
-          docker tag ${{ inputs.image_name }}:${{ github.sha }} ${{ inputs.ecr_repository }}:latest
-          docker push ${{ inputs.ecr_repository }}:${{ github.sha }}
-          docker push ${{ inputs.ecr_repository }}:latest
+          if [ -n "$ECR_REPOSITORY" ]; then
+            echo "repository=$ECR_REPOSITORY" >> "$GITHUB_OUTPUT"
+          else
+            echo "repository=$ECR_REGISTRY/$IMAGE_NAME" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Push Image
+        env:
+          ECR_REPOSITORY: ${{ steps.repository.outputs.repository }}
+        run: |
+          docker tag ${{ inputs.image_name }}:${{ github.sha }} $ECR_REPOSITORY:${{ github.sha }}
+          docker tag ${{ inputs.image_name }}:${{ github.sha }} $ECR_REPOSITORY:latest
+          docker push $ECR_REPOSITORY:${{ github.sha }}
+          docker push $ECR_REPOSITORY:latest
 
       - name: Deploy ECS
         run: |
@@ -97,8 +113,10 @@ jobs:
           fi
 
       - name: Summary
+        env:
+          ECR_REPOSITORY: ${{ steps.repository.outputs.repository }}
         run: |
           echo "### Deployed to AWS" >> $GITHUB_STEP_SUMMARY
           echo "- **Cluster:** ${{ inputs.ecs_cluster }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Service:** ${{ inputs.ecs_service }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Image:** ${{ inputs.ecr_repository }}:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Image:** $ECR_REPOSITORY:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY

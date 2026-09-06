@@ -40,10 +40,10 @@ the second command.
 
 ## Stale Schema Recreation
 
-Use this only when the local database schema predates a native model change.
+Use this only when the local database schema predates the native baseline.
 Unlike the patient-data reset above, this removes all local tables, including
-users and workflow records. The backend recreates and seeds the approved local
-schema when it starts.
+users and workflow records. The backend applies the native Alembic baseline
+before it starts, then seeds the approved local schema.
 
 ```bash
 docker compose stop folium-backend folium-chartreview-worker folium-voicenotes-worker
@@ -56,6 +56,12 @@ docker compose exec -T folium-backend pytest tests
 
 ## Migration Rule
 
-Future schema changes require either a forward Alembic migration with an explicit
-rollback or a replacement decision that updates this reset procedure before code
-merges. Do not reintroduce retired `Interaction` or legacy `Document` contracts.
+`48b3bb684508_create_native_clinical_schema` is the sole Alembic baseline for
+the native model. It intentionally replaces the prior starter-schema migration
+history; no in-place upgrade path is supported for retired Interaction or
+Document tables.
+
+Future schema changes require a forward Alembic migration from this baseline
+with an explicit rollback, or a replacement decision that updates this reset
+procedure before code merges. Do not reintroduce retired `Interaction` or
+legacy `Document` contracts.

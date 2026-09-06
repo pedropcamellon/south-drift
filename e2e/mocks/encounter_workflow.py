@@ -7,6 +7,11 @@ from playwright.sync_api import Page, Route
 RoutePatterns = tuple[str, ...]
 
 
+def request_json_object(route: Route) -> dict[str, object]:
+    payload = route.request.post_data_json
+    return payload if isinstance(payload, dict) else {}
+
+
 def install_encounter_mocks(
     page: Page, encounter_id: str, transcript: str, mock_summary: bool = True
 ) -> RoutePatterns:
@@ -39,8 +44,9 @@ def install_encounter_mocks(
         )
 
     def handle_note(route: Route) -> None:
-        payload = route.request.post_data_json
-        state["saved_note"] = payload.get("content", "")
+        payload = request_json_object(route)
+        content = payload.get("content")
+        state["saved_note"] = content if isinstance(content, str) else ""
         route.fulfill(
             status=200,
             content_type="application/json",
@@ -56,8 +62,9 @@ def install_encounter_mocks(
         route.fulfill(response=response, json=data)
 
     def handle_summary(route: Route) -> None:
-        payload = route.request.post_data_json
-        note = payload.get("transcript", "")
+        payload = request_json_object(route)
+        transcript_value = payload.get("transcript")
+        note = transcript_value if isinstance(transcript_value, str) else ""
         route.fulfill(
             status=200,
             content_type="application/json",

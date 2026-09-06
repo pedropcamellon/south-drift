@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     ]
 
     # Database
-    DATABASE_URL: str = ""
+    database_url: str = Field("", validation_alias="DATABASE_URL")
 
     # JWT Authentication
     JWT_SECRET: str = ""
@@ -79,7 +79,7 @@ class Settings(BaseSettings):
     def validate_required_env_settings(self) -> "Settings":
         missing_fields: list[str] = []
 
-        if not self.DATABASE_URL.strip():
+        if not self.database_url.strip():
             missing_fields.append("DATABASE_URL")
 
         if not self.JWT_SECRET.strip():

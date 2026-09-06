@@ -2,35 +2,18 @@
 
 import logging
 from collections.abc import AsyncGenerator
+from typing import cast
 
 from fastapi import Depends
 from fastapi_users_db_sqlalchemy import SQLAlchemyUserDatabase
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.config import settings
 
-# Import all models to register them with Base.metadata
-from app.models.db import (  # noqa: F401
-    Attachment,
-    ChartReview,
-    ChartReviewCitation,
-    ChartReviewSourceRef,
-    ClinicalDocument,
-    ClinicalProvenance,
-    DiagnosticReport,
-    Encounter,
-    EncounterNarrative,
-    ImagingStudy,
-    Observation,
-    Patient,
-    ResourceRelationship,
-)
-from app.models.user import Base
-
 logger = logging.getLogger(__name__)
 
-# Database URL from settings/.env (required)
-DATABASE_URL = settings.DATABASE_URL
+DATABASE_URL = cast(str, settings.model_dump()["database_url"])
 if not DATABASE_URL:
     raise ValueError(
         "DATABASE_URL environment variable is required. "
@@ -111,13 +94,13 @@ def _log_connection_error(error: Exception) -> None:
     logger.error("=" * 70)
 
 
-async def create_db_and_tables() -> None:
-    """Create database tables on startup."""
+async def verify_database_connection() -> None:
+    """Verify the Alembic-managed database is reachable."""
     try:
         logger.info("Connecting to database...")
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
-        logger.info("Database connected and tables initialized")
+        async with engine.connect() as connection:
+            await connection.execute(text("SELECT 1"))
+        logger.info("Database connection verified")
     except Exception as exc:
         _log_connection_error(exc)
         raise RuntimeError("Database initialization failed") from exc

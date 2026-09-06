@@ -5,7 +5,7 @@ Run with: python -m app.seed_db
 
 import asyncio
 
-from app.core.database import async_session_maker, create_db_and_tables
+from app.core.database import async_session_maker
 from app.seed import (
     seed_clinical_documents,
     seed_diagnostic_reports,
@@ -18,11 +18,8 @@ from app.services.storage import get_storage
 
 
 async def main():
-    """Create tables and seed all data."""
-    print("Creating database tables...")
-    await create_db_and_tables()
-
-    print("\nSeeding database...")
+    """Seed an Alembic-managed database with synthetic data."""
+    print("Seeding database...")
 
     # Seed users
     async with async_session_maker() as session:

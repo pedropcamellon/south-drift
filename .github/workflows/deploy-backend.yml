@@ -115,7 +115,7 @@ jobs:
       artifact_name: folium-backend-image
       ecs_cluster: ${{ needs.terraform-aws.outputs.ecs_cluster_name || format('folium-{0}', github.event.inputs.environment) }}
       ecs_service: ${{ needs.terraform-aws.outputs.ecs_service_name || 'backend' }}
-      ecr_repository: ${{ needs.terraform-aws.outputs.ecr_repository || format('{0}.dkr.ecr.{1}.amazonaws.com/folium-backend', secrets.AWS_ACCOUNT_ID, secrets.AWS_REGION) }}
+      ecr_repository: ${{ needs.terraform-aws.outputs.ecr_repository }}
     secrets:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

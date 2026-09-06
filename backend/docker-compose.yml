@@ -34,7 +34,12 @@ services:
     volumes:
       - backend_cache:/root/.cache
     working_dir: /workspace/backend
-    command: uv run --frozen --no-sync --package folium uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    command:
+      [
+        "/bin/sh",
+        "-c",
+        "uv run --frozen --no-sync --package folium alembic upgrade head && exec uv run --frozen --no-sync --package folium uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload",
+      ]
     healthcheck:
       test:
         [
